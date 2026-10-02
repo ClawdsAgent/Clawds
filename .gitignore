@@ -28,3 +28,6 @@ Thumbs.db
 providers.json
 .env
 .env.*
+
+# сборка релиза
+/release/

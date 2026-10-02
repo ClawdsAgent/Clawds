@@ -1,6 +1,10 @@
 // Связь с локальным сервером Clawds: команды и поток событий.
 import { t } from './i18n'
-const URL_WS = `ws://127.0.0.1:8787`
+// Адрес сервера можно переопределить: ?ws=ws://127.0.0.1:8788 (для демонстраций и проверок рядом с рабочим сервером)
+const savedWs = (() => { try { return localStorage.getItem('clawds.ws') } catch { return null } })()
+// В разработке (Vite, порт 5173) сервер на 8787; из собранной версии страницу отдаёт сам сервер, ему и подключаемся
+const defaultWs = location.port === '5173' ? 'ws://127.0.0.1:8787' : `ws://${location.host}`
+const URL_WS = new URLSearchParams(location.search).get('ws') ?? savedWs ?? defaultWs
 
 type Handlers = { onEvent: (e: any) => void; onStatus: (open: boolean) => void }
 let ws: WebSocket | null = null

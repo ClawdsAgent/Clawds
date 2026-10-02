@@ -1,0 +1,10 @@
+{
+  "name": "clawds",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local multi-agent messenger for Claude Code bots",
+  "license": "MIT",
+  "scripts": {
+    "release": "node scripts/build-release.mjs"
+  }
+}
