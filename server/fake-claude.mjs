@@ -29,9 +29,12 @@ process.stdin.on('end', async () => {
   out({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'echo привет' } }] } })
   await w(Number(process.env.FAKE_MS) || 300)
   out({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 't1', content: 'привет' }] } })
-  for (const part of [say ?? 'Готово. Передаю @dev для сведения.']) {
+  const full = say ?? 'Готово. Передаю @dev для сведения.'
+  // FAKE_STREAM=1: ответ приходит кусочками, как у настоящей модели (для записи демонстраций)
+  const parts = process.env.FAKE_STREAM ? full.match(/[\s\S]{1,7}/g) : [full]
+  for (const part of parts) {
     out({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: part } } })
-    await w(200)
+    await w(process.env.FAKE_STREAM ? 22 : 200)
   }
   out({ type: 'result', session_id: 'fake-session', is_error: false, result: 'ok', total_cost_usd: 0, num_turns: 1 })
 })
