@@ -1,0 +1,12 @@
+{
+  "name": "clawds-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dev.mjs",
+    "start:plain": "node index.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
