@@ -1,6 +1,6 @@
 // Подставной claude для проверки конвейера без входа в аккаунт.
 // Что пишет в ответе, задаётся строкой в prompt: FAKE_SAY=<текст>
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 if (process.env.FAKE_LOG) appendFileSync(process.env.FAKE_LOG, process.argv.slice(2).join(' ') + ' ENV ' + ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_MODEL', 'CLAUDE_CODE_DISABLE_CLAUDE_MDS'].map((k) => k + '=' + (process.env[k] ?? '')).join(' ') + '\n')
 let prompt = ''
 process.stdin.on('data', (d) => (prompt += d))
@@ -9,7 +9,16 @@ process.stdin.on('end', async () => {
   const out = (o) => console.log(JSON.stringify(o))
   const w = (ms) => new Promise((r) => setTimeout(r, ms))
   const found = [...prompt.matchAll(/FAKE_SAY=(.*)/g)]
-  const say = found.length ? found[found.length - 1][1].replaceAll('§', '@') : undefined
+  let say = found.length ? found[found.length - 1][1].replaceAll('§', '@') : undefined
+  // FAKE_SCRIPT=файл.json: {"бот": ["ответ 1", "ответ 2"]}. Ответы по порядку для каждого бота (для демонстраций без меток в чате)
+  if (process.env.FAKE_SCRIPT) {
+    const who = /Ты: ([\w-]+),/.exec(prompt)?.[1]
+    const sc = JSON.parse(readFileSync(process.env.FAKE_SCRIPT, 'utf8'))
+    const cf = process.env.FAKE_SCRIPT + '.' + who
+    const n = existsSync(cf) ? Number(readFileSync(cf, 'utf8')) : 0
+    writeFileSync(cf, String(n + 1))
+    say = sc[who]?.[n] ?? '[молчу]'
+  }
   out({ type: 'system', subtype: 'init', session_id: 'fake-session' })
   // FAKE_QUOTA=пятичасовое,недельное (доли 0..1) имитирует событие квоты; FAKE_MS растягивает работу
   if (process.env.FAKE_QUOTA) {

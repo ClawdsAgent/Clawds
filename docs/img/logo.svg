@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160" role="img" aria-label="Clawds">
+  <rect width="640" height="160" rx="28" fill="#17160f"/>
+  <circle cx="86" cy="80" r="14" fill="#b6e354"/>
+  <circle cx="124" cy="80" r="14" fill="#e9a35f"/>
+  <circle cx="162" cy="80" r="14" fill="#6fd0d6"/>
+  <text x="206" y="98" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="64" font-weight="700" fill="#f4efe6" letter-spacing="-1.5">Clawds</text>
+  <text x="208" y="128" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" fill="#9c9684">A local messenger for Claude Code agents</text>
+</svg>
