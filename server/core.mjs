@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { randomBytes, createHash } from 'node:crypto'
 import { COLORS, autoNumber, usernameRule, cronMatches, MODELS, EFFORTS, supportsEffort } from './lib/rules.mjs'
 import { runClaude, runOnce } from './lib/runner.mjs'
+import { tr, setLang, getLang } from './lib/locale.mjs'
 import { createStore, fetchModels, envFor, parseEp, isEp } from './lib/providers.mjs'
 import { spawn } from 'node:child_process'
 import { ensureRepo, workspaceInfo, setRemote, ensureWorktree, removeWorktree, deleteBranches, isGitRepo } from './lib/git.mjs'
@@ -166,14 +167,15 @@ function newAccount(id, name, extra = {}) {
 // Профиль человека переносится между сессиями
 function newMe() {
   const p = recent.profile
-  return newAccount('me', p?.name ?? 'Вы', { username: p?.username ?? 'user', bio: p?.bio ?? '', log: [{ ts: now(), text: 'Аккаунт создан, номер выдан автоматически' }] })
+  return newAccount('me', p?.name ?? tr('Вы'), { username: p?.username ?? 'user', bio: p?.bio ?? '', log: [{ ts: now(), text: tr('Аккаунт создан, номер выдан автоматически') }] })
 }
 
 function loadRecent() {
   if (existsSync(RECENT_FILE)) {
     try {
       const j = JSON.parse(readFileSync(RECENT_FILE, 'utf8'))
-      recent = { sessions: j.sessions ?? [], profile: j.profile ?? null, lastOpen: j.lastOpen ?? null, heartbeat: j.heartbeat ?? 0 }
+      recent = { sessions: j.sessions ?? [], profile: j.profile ?? null, lastOpen: j.lastOpen ?? null, heartbeat: j.heartbeat ?? 0, lang: j.lang }
+      setLang(recent.lang)
       if (j.quota) quota = j.quota
     } catch (e) { console.error('recent.json повреждён:', e.message) }
   }
@@ -209,9 +211,9 @@ const recentView = () =>
 
 function resolveFolder(p) {
   const raw = String(p ?? '').trim().replace(/^"|"$/g, '')
-  if (!raw) err('Укажите папку')
+  if (!raw) err(tr('Укажите папку'))
   const f = resolve(raw)
-  if (!existsSync(f) || !statSync(f).isDirectory()) err('Такой папки нет: ' + f)
+  if (!existsSync(f) || !statSync(f).isDirectory()) err(tr('Такой папки нет: {f}', { f }))
   return f
 }
 
@@ -237,8 +239,8 @@ export const snapshot = () => ({
 export const launcherInfo = () => ({ t: 'recent', recent: recentView() })
 
 async function openSession(id) {
-  const e = recent.sessions.find((s) => s.id === id) ?? err('Нет такой сессии')
-  if (!existsSync(e.folder)) err('Папка сессии не найдена: ' + e.folder)
+  const e = recent.sessions.find((s) => s.id === id) ?? err(tr('Нет такой сессии'))
+  if (!existsSync(e.folder)) err(tr('Папка сессии не найдена: {f}', { f: e.folder }))
   if (ctx) await closeSession()
   ctx = e
   e.opened = now()
@@ -259,7 +261,7 @@ async function openSession(id) {
   for (const b of S.bots) { ensureBotFiles(b); b.effort ??= 'default'; b.boss ??= b.id === 'lead' }
   ensureSharedRules()
   // Сообщения, прерванные падением сервера, помечаем завершёнными
-  for (const m of S.messages) if (m.streaming) { m.streaming = false; m.error = true; m.text = (m.text ? m.text + '\n\n' : '') + 'Прервано: сервер был остановлен.' }
+  for (const m of S.messages) if (m.streaming) { m.streaming = false; m.error = true; m.text = (m.text ? m.text + '\n\n' : '') + tr('Прервано: сервер был остановлен.') }
   await ensureRepo(WORKSPACE)
   await ensureWorktrees()
   workspace = await workspaceInfo(WORKSPACE)
@@ -286,12 +288,12 @@ async function closeSession() {
 // Файлы сессии удаляем только внутри её папки и только каталоги bots и uploads
 function safeRm(p) {
   const abs = resolve(p)
-  if (!ctx || !['bots', 'uploads'].includes(basename(abs)) || !abs.toLowerCase().startsWith(resolve(ctx.folder).toLowerCase() + sep)) err('Отказ: путь вне сессии')
+  if (!ctx || !['bots', 'uploads'].includes(basename(abs)) || !abs.toLowerCase().startsWith(resolve(ctx.folder).toLowerCase() + sep)) err(tr('Отказ: путь вне сессии'))
   rmSync(abs, { recursive: true, force: true })
 }
 
 async function resetSession() {
-  if (!ctx) err('Сессия не открыта')
+  if (!ctx) err(tr('Сессия не открыта'))
   stopRuns()
   for (const b of S.bots) if (!b.boss) await removeWorktree(WORKSPACE, join(botDir(b.id), 'repo'))
   const ids = new Set(S.bots.map((b) => b.id))
@@ -445,6 +447,9 @@ const botInfo = (b) => ({
   workdir: workDir(b).replaceAll('\\', '/'), workspace: WORKSPACE.replaceAll('\\', '/'), botDir: botDir(b.id).replaceAll('\\', '/'),
 })
 
+// Язык ответов задаёт интерфейс; правила на русском, но пишут боты на выбранном языке
+const langLine = () => (getLang() === 'en' ? 'LANGUAGE: write every chat message, report and file note in English, even though these rules are in Russian. The human uses an English interface.' : 'ЯЗЫК: пиши сообщения по-русски.')
+
 function buildPrompt(b, ch, job, lite = false) {
   const roster = S.bots.filter((x) => x.id !== b.id).map((x) => '@' + acc(x.id).username + ' (' + x.role + ')').join('; ')
   const where = ch.kind === 'dm'
@@ -459,11 +464,11 @@ function buildPrompt(b, ch, job, lite = false) {
     : PR.taskLine('human', { who })
   if (lite) {
     const rosterLite = S.bots.filter((x) => x.id !== b.id).map((x) => '@' + acc(x.id).username).join(', ')
-    const headLite = PR.liteHead(botInfo(b), where, rosterLite, task)
+    const headLite = langLine() + '\n' + PR.liteHead(botInfo(b), where, rosterLite, task)
     return job.trigger ? headLite + '\n\nПереписка (новое в конце):\n' + lines.join('\n') : headLite
   }
   // Динамические сведения кладём в сам запуск: системная инструкция у возобновляемой сессии (--resume) не обновляется
-  const head = '[Clawds. Сейчас ' + new Date().toLocaleString('ru-RU') + ']\n' + PR.identityLines(botInfo(b)).join('\n') + '\nГде ты: ' + where + '\nДругие боты: ' + (roster || 'нет') + '\nЧТО ОТ ТЕБЯ НУЖНО: ' + task
+  const head = '[Clawds. Сейчас ' + new Date().toLocaleString(getLang() === 'en' ? 'en-US' : 'ru-RU') + ']\n' + langLine() + '\n' + PR.identityLines(botInfo(b)).join('\n') + '\nГде ты: ' + where + '\nДругие боты: ' + (roster || 'нет') + '\nЧТО ОТ ТЕБЯ НУЖНО: ' + task
   return job.trigger ? head + '\n\nПереписка (новое в конце):\n' + lines.join('\n') : head
 }
 
@@ -478,7 +483,7 @@ function routeMessage(msg, depth, explicitOnly = false) {
   const wake = (id, tier) => runBot({ botId: id, channelId: ch.id, from: author, text: msg.text, threadOf: msg.threadOf, depth, trigger: msg, tier })
 
   if (isAll(msg.text)) {
-    if (!tier1Allowed(author, ch.id)) { sysMsg(ch.id, 'Рассылка /all от ' + nameOf(author) + ' отклонена: боты могут слать /all не чаще раза в ' + S.settings.allCooldown + ' мин на группу. Лимит меняется в настройках.'); return }
+    if (!tier1Allowed(author, ch.id)) { sysMsg(ch.id, tr('Рассылка /all от {who} отклонена: боты могут слать /all не чаще раза в {n} мин на группу. Лимит меняется в настройках.', { who: nameOf(author), n: S.settings.allCooldown })); return }
     msg.tier = 1
     putMsg(msg); persist()
     botsIn.filter((id) => id !== author).forEach((id) => wake(id, 1))
@@ -516,15 +521,15 @@ export function runBot(job) {
   if (!b) return
   const ch = chan(job.channelId)
   if (!ch) return
-  if (job.depth > S.settings.maxChainDepth) { sysMsg(ch.id, `Цепочка упоминаний оборвана: глубина больше ${S.settings.maxChainDepth}.`); return }
+  if (job.depth > S.settings.maxChainDepth) { sysMsg(ch.id, tr('Цепочка упоминаний оборвана: глубина больше {n}.', { n: S.settings.maxChainDepth })); return }
   if (job.from === 'me' && acc('me').blocked.includes(b.id)) return
   if (job.from !== 'me' && acc(b.id).blocked.includes(job.from)) return
   if (job.from !== 'me' && job.trigger && !handoffAllowed(job.from, b.id)) {
-    sysMsg(ch.id, `Передача от ${nameOf(job.from)} к ${nameOf(b.id)} остановлена: лимит передач между ботами (${S.settings.handoffPair || '∞'} на пару и ${S.settings.handoffTotal || '∞'} всего за ${S.settings.handoffWindow} мин). Лимит меняется в настройках.`)
+    sysMsg(ch.id, tr('Передача от {a} к {b} остановлена: лимит передач между ботами ({p} на пару и {t} всего за {w} мин). Лимит меняется в настройках.', { a: nameOf(job.from), b: nameOf(b.id), p: S.settings.handoffPair || '∞', t: S.settings.handoffTotal || '∞', w: S.settings.handoffWindow }))
     return
   }
   if (!isEp(b.model) && S.settings.pauseAtPct && quota.known && quota.sevenDay.pct >= S.settings.pauseAtPct) {
-    sysMsg(ch.id, `Боты на паузе: недельная квота ${Math.round(quota.sevenDay.pct)}% достигла порога ${S.settings.pauseAtPct}%. Порог меняется в настройках.`)
+    sysMsg(ch.id, tr('Боты на паузе: недельная квота {pct}% достигла порога {th}%. Порог меняется в настройках.', { pct: Math.round(quota.sevenDay.pct), th: S.settings.pauseAtPct }))
     return
   }
   job.epoch = epoch
@@ -590,7 +595,7 @@ async function doRun(b, ch, job) {
   const sentByTool = agentTokens.get(token)?.sent ?? []
   agentTokens.delete(token)
   if (!alive()) { release(); return }
-  if (job.epoch !== epoch) { msg.error = true; msg.text = (msg.text ? msg.text + '\n\n' : '') + 'Остановлено вами.' }
+  if (job.epoch !== epoch) { msg.error = true; msg.text = (msg.text ? msg.text + '\n\n' : '') + tr('Остановлено вами.') }
   msg.streaming = false
   for (const t of msg.tools ?? []) t.done = true
   // Строки [файл: путь] в ответе бота становятся вложениями
@@ -599,7 +604,7 @@ async function doRun(b, ch, job) {
     const { attachments, bad } = attachFromPaths(markers.map((m) => m[1]))
     msg.text = msg.text.replace(/\[(?:файл|attach)\s*:\s*[^\]\n]+\]/gi, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
     if (attachments.length) msg.attachments = [...(msg.attachments ?? []), ...attachments]
-    if (bad.length) msg.text += (msg.text ? '\n\n' : '') + 'Не удалось приложить: ' + bad.join(', ')
+    if (bad.length) msg.text += (msg.text ? '\n\n' : '') + tr('Не удалось приложить: {l}', { l: bad.join(', ') })
     emit({ t: 'text', id: msg.id, delta: '', full: msg.text })
     final = msg.text
   }
@@ -675,14 +680,14 @@ function attachFromPaths(paths) {
 const err = (m) => { throw new Error(m) }
 
 function sendMessage(actor, channelId, text, { threadOf, attachments, depth = 0 } = {}) {
-  const ch = chan(channelId) ?? err('Нет такого чата')
-  if (!ch.members.includes(actor)) err('Вы не участник этого чата')
+  const ch = chan(channelId) ?? err(tr('Нет такого чата'))
+  if (!ch.members.includes(actor)) err(tr('Вы не участник этого чата'))
   const t = String(text ?? '').trim()
-  if (!t && !attachments?.length) err('Пустое сообщение')
+  if (!t && !attachments?.length) err(tr('Пустое сообщение'))
   // Заблокированным в личке не доставляем
   const peer = ch.kind === 'dm' ? ch.members.find((m) => m !== actor) : null
-  if (peer && peer !== actor && acc(peer)?.blocked.includes(actor)) err('Вам не отвечают: вы заблокированы')
-  if (peer && actor !== 'me' && acc(actor).blocked.includes(peer)) err('Вы заблокировали этого участника')
+  if (peer && peer !== actor && acc(peer)?.blocked.includes(actor)) err(tr('Вам не отвечают: вы заблокированы'))
+  if (peer && actor !== 'me' && acc(actor).blocked.includes(peer)) err(tr('Вы заблокировали этого участника'))
   const msg = addMsg({ channelId, authorId: actor, text: t, threadOf, attachments })
   routeMessage(msg, depth)
   return msg
@@ -691,14 +696,14 @@ function sendMessage(actor, channelId, text, { threadOf, attachments, depth = 0 
 export const commands = {
   send: (actor, a) => { sendMessage(actor, a.channelId, a.text, a); return {} },
   react: (actor, a) => {
-    const m = S.messages.find((x) => x.id === a.msgId) ?? err('Нет сообщения')
+    const m = S.messages.find((x) => x.id === a.msgId) ?? err(tr('Нет сообщения'))
     const cur = m.reactions[a.emoji] ?? []
     const next = cur.includes(actor) ? cur.filter((x) => x !== actor) : [...cur, actor]
     if (next.length) m.reactions[a.emoji] = next; else delete m.reactions[a.emoji]
     putMsg(m); persist()
   },
   pin: (actor, a) => {
-    const m = S.messages.find((x) => x.id === a.msgId) ?? err('Нет сообщения')
+    const m = S.messages.find((x) => x.id === a.msgId) ?? err(tr('Нет сообщения'))
     m.pinned = !m.pinned
     const ch = chan(m.channelId)
     if (m.pinned && ch?.kind === 'channel' && actor === 'me') {
@@ -710,8 +715,8 @@ export const commands = {
 
   createBot: (actor, a) => {
     const n = String(a.name ?? '').trim().toLowerCase()
-    if (!/^[a-z][a-z0-9_-]{1,23}$/.test(n)) err('Имя бота: латиница, цифры, «-» и «_», от 2 до 24 символов, первая буква')
-    if (S.bots.some((b) => b.id === n)) err('Такой бот уже есть')
+    if (!/^[a-z][a-z0-9_-]{1,23}$/.test(n)) err(tr('Имя бота: латиница, цифры, «-» и «_», от 2 до 24 символов, первая буква'))
+    if (S.bots.some((b) => b.id === n)) err(tr('Такой бот уже есть'))
     // Для имён lead, dev, tester, research без описания берём готовую роль
     const preset = !String(a.role ?? '').trim() ? PR.ROLES[n] : null
     const role = preset?.role ?? (String(a.role ?? '').trim() || 'Новый бот.')
@@ -722,38 +727,38 @@ export const commands = {
     const taken = Object.values(S.accounts).map((x) => x.username)
     let u = /^[a-z][a-z0-9_]{4,}$/.test(n) ? n : `${n.replace(/-/g, '_')}_bot`
     while (taken.includes(u)) u += Math.floor(Math.random() * 10)
-    S.accounts[n] = newAccount(n, n, { username: u, bio: role, log: [{ ts: now(), text: `Аккаунт создан, @${u}, номер выдан автоматически` }] })
+    S.accounts[n] = newAccount(n, n, { username: u, bio: role, log: [{ ts: now(), text: tr('Аккаунт создан, @{u}, номер выдан автоматически', { u }) }] })
     emit({ t: 'put', key: 'bots', value: botView(b) }); putAccount(n)
     const general = chan('general'); if (general) { general.members.push(n); putChannel(general) }
     const dm = { id: `dm-${n}`, kind: 'dm', name: n, members: ['me', n] }
     S.channels.push(dm); putChannel(dm)
-    toast(`Бот ${n} создан: @${u}`)
+    toast(tr('Бот {n} создан: @{u}', { n, u }))
     return { channelId: dm.id }
   },
 
   createGroup: (actor, a) => {
     const n = String(a.name ?? '').trim().toLowerCase().replace(/\s+/g, '-')
-    if (!n) err('Нужно название')
-    if (chanByName(n)) err('Такая группа уже есть')
+    if (!n) err(tr('Нужно название'))
+    if (chanByName(n)) err(tr('Такая группа уже есть'))
     const members = [...new Set([actor, ...(a.members ?? []).filter((m) => acc(m))])]
     const c = { id: `g-${uid()}`, kind: 'channel', name: n, members }
     S.channels.push(c); putChannel(c)
     return { channelId: c.id }
   },
   addMembers: (actor, a) => {
-    const c = chan(a.channelId) ?? err('Нет такого чата')
+    const c = chan(a.channelId) ?? err(tr('Нет такого чата'))
     c.members = [...new Set([...c.members, ...(a.ids ?? []).filter((m) => acc(m))])]
     putChannel(c)
   },
   openDm: (actor, a) => ({ channelId: dmChannel(actor, a.id).id }),
 
   updateBot: (actor, a) => {
-    const b = bot(a.id) ?? err('Нет такого бота')
+    const b = bot(a.id) ?? err(tr('Нет такого бота'))
     const d = botDir(b.id)
     for (const [field, file] of [['claudeMd', 'CLAUDE.md'], ['memory', 'memory.md'], ['todo', 'todo.md']]) if (typeof a.patch[field] === 'string') writeFileSync(join(d, file), a.patch[field])
     const p = a.patch
-    if (p.model !== undefined) { if (!validModel(p.model)) err('Неизвестная модель или эндпоинт удалён'); b.model = p.model }
-    if (p.effort !== undefined) { if (!EFFORTS.includes(p.effort)) err('Неизвестный уровень размышлений'); b.effort = p.effort }
+    if (p.model !== undefined) { if (!validModel(p.model)) err(tr('Неизвестная модель или эндпоинт удалён')); b.model = p.model }
+    if (p.effort !== undefined) { if (!EFFORTS.includes(p.effort)) err(tr('Неизвестный уровень размышлений')); b.effort = p.effort }
     if (p.boss !== undefined) b.boss = !!p.boss
     for (const k of ['sleeping', 'schedule', 'role']) if (p[k] !== undefined) b[k] = p[k]
     persist()
@@ -771,67 +776,67 @@ export const commands = {
     const taken = Object.values(S.accounts).filter((x) => x.id !== actor).map((x) => x.username)
     const rule = usernameRule(u, taken)
     const x = acc(actor)
-    if (!rule.ok) err(rule.reason)
-    if (u === x.username) err('Это уже ваш юзернейм')
+    if (!rule.ok) err(tr(rule.reason))
+    if (u === x.username) err(tr('Это уже ваш юзернейм'))
     x.username = u
-    logAcc(actor, 'Сменил юзернейм на @' + u)
+    logAcc(actor, tr('Сменил юзернейм на @{u}', { u }))
     putAccount(actor)
-    if (actor === 'me') toast('Юзернейм @' + u + ' установлен')
+    if (actor === 'me') toast(tr('Юзернейм @{u} установлен', { u }))
     return { username: u }
   },
   block: (actor, a) => {
-    if (!acc(a.id)) err('Нет такого аккаунта')
-    if (a.id === actor) err('Себя блокировать нельзя')
+    if (!acc(a.id)) err(tr('Нет такого аккаунта'))
+    if (a.id === actor) err(tr('Себя блокировать нельзя'))
     const x = acc(actor); x.blocked = [...new Set([...x.blocked, a.id])]
-    logAcc(actor, `Заблокировал ${nameOf(a.id)}`)
+    logAcc(actor, tr('Заблокировал {n}', { n: nameOf(a.id) }))
     putAccount(actor)
-    if (actor === 'me') toast(`${nameOf(a.id)} заблокирован`)
+    if (actor === 'me') toast(tr('{n} заблокирован', { n: nameOf(a.id) }))
   },
   unblock: (actor, a) => {
     const x = acc(actor); x.blocked = x.blocked.filter((i) => i !== a.id)
-    logAcc(actor, `Разблокировал ${nameOf(a.id)}`)
+    logAcc(actor, tr('Разблокировал {n}', { n: nameOf(a.id) }))
     putAccount(actor)
-    if (actor === 'me') toast('Разблокирован')
+    if (actor === 'me') toast(tr('Разблокирован'))
   },
   toggleMute: (actor, a) => {
-    chan(a.channelId) ?? err('Нет такого чата')
+    chan(a.channelId) ?? err(tr('Нет такого чата'))
     const x = acc(actor)
     const on = x.muted.includes(a.channelId)
     x.muted = on ? x.muted.filter((i) => i !== a.channelId) : [...x.muted, a.channelId]
-    logAcc(actor, `${on ? 'Включил звук' : 'Заглушил'} ${chan(a.channelId).name}`)
+    logAcc(actor, tr(on ? 'Включил звук {c}' : 'Заглушил {c}', { c: chan(a.channelId).name }))
     putAccount(actor)
-    if (actor === 'me') toast(on ? 'Звук включён' : 'Чат заглушен')
+    if (actor === 'me') toast(on ? tr('Звук включён') : tr('Чат заглушен'))
   },
   leaveChannel: (actor, a) => {
-    const c = chan(a.channelId) ?? err('Нет такого чата')
-    if (c.kind !== 'channel') err('Из личных чатов не выходят, их можно заглушить или заблокировать собеседника')
+    const c = chan(a.channelId) ?? err(tr('Нет такого чата'))
+    if (c.kind !== 'channel') err(tr('Из личных чатов не выходят, их можно заглушить или заблокировать собеседника'))
     c.members = c.members.filter((m) => m !== actor)
     putChannel(c)
-    logAcc(actor, `Покинул группу #${c.name}`)
+    logAcc(actor, tr('Покинул группу #{c}', { c: c.name }))
     putAccount(actor)
-    if (actor !== 'me') sysMsg(c.id, `${nameOf(actor)} вышел из группы`)
-    else toast('Вы покинули группу')
+    if (actor !== 'me') sysMsg(c.id, tr('{n} вышел из группы', { n: nameOf(actor) }))
+    else toast(tr('Вы покинули группу'))
   },
 
   stopAll: () => {
     const n = stopRuns()
-    toast(n ? `Остановлено запусков: ${n}` : 'Ничего не запущено')
+    toast(n ? tr('Остановлено запусков: {n}', { n }) : tr('Ничего не запущено'))
     return { stopped: n }
   },
   // Сессии: папка проекта + свои боты, группы и переписка. Работают и без открытой сессии.
   // Haiku придумывает подробный системный промпт (5 предложений) по названию и короткому описанию
   generatePrompt: async (actor, a) => {
     const name = String(a.name ?? '').trim()
-    if (!name) err('Сначала введите название бота')
+    if (!name) err(tr('Сначала введите название бота'))
     const desc = String(a.description ?? '').trim().slice(0, 600)
     let opts = { cwd: DATA, configDir: CONFIG_DIR, model: 'haiku' }
     if (!claudeLoggedIn()) {
       const p = PROV.list().find((x) => x.models.length)
-      if (!p) err('Нужен вход в Claude или свой эндпоинт: откройте «Подключения»')
+      if (!p) err(tr('Нужен вход в Claude или свой эндпоинт: откройте «Подключения»'))
       const m = p.models.find((x) => /haiku|mini|flash|small/i.test(x.id)) ?? p.models[0]
       opts = { ...opts, model: m.id, env: envFor(p, m.id) }
     }
-    const text = await runOnce({ ...opts, prompt: PR.generateRolePrompt(name, desc) })
+    const text = await runOnce({ ...opts, prompt: PR.generateRolePrompt(name, desc, getLang()) })
     return { prompt: text.replace(/^["«]|["»]$/g, '').trim() }
   },
   listRecent: () => ({ recent: recentView() }),
@@ -848,6 +853,7 @@ export const commands = {
     emitConn()
     return {}
   },
+  setLang: (actor, a) => { setLang(a.lang); recent.lang = getLang(); saveRecent() },
   claudeStatus: async () => { emitConn(); return { loggedIn: claudeLoggedIn() } },
   saveProvider: async (actor, a) => {
     const p = PROV.upsert(a)
@@ -856,7 +862,7 @@ export const commands = {
     return { id: p.id, ok: r.ok, count: r.count ?? p.models.length, error: r.error }
   },
   refreshModels: async (actor, a) => {
-    const p = PROV.get(a.id) ?? err('Нет такого эндпоинта')
+    const p = PROV.get(a.id) ?? err(tr('Нет такого эндпоинта'))
     const r = await fetchModels(p)
     PROV.save(); emitConn()
     return { ok: r.ok, count: r.count, error: r.error }
@@ -864,19 +870,19 @@ export const commands = {
   deleteProvider: (actor, a) => { PROV.remove(a.id); emitConn() },
   // lite для одной модели или сразу для всех (a.model не задан)
   setModelLite: (actor, a) => {
-    const p = PROV.get(a.id) ?? err('Нет такого эндпоинта')
+    const p = PROV.get(a.id) ?? err(tr('Нет такого эндпоинта'))
     for (const m of p.models) if (a.model === undefined || a.model === m.id) m.lite = !!a.lite
     PROV.save(); emitConn()
   },
   addModel: (actor, a) => {
-    const p = PROV.get(a.id) ?? err('Нет такого эндпоинта')
+    const p = PROV.get(a.id) ?? err(tr('Нет такого эндпоинта'))
     const id = String(a.model ?? '').trim()
-    if (!id) err('Нужен ID модели')
+    if (!id) err(tr('Нужен ID модели'))
     if (!p.models.some((m) => m.id === id)) p.models.push({ id, name: id, lite: !!p.liteDefault, manual: true })
     PROV.save(); emitConn()
   },
   removeModel: (actor, a) => {
-    const p = PROV.get(a.id) ?? err('Нет такого эндпоинта')
+    const p = PROV.get(a.id) ?? err(tr('Нет такого эндпоинта'))
     p.models = p.models.filter((m) => m.id !== a.model)
     PROV.save(); emitConn()
   },
@@ -893,22 +899,22 @@ export const commands = {
   closeSession: async () => { await closeSession(); return {} },
   // Новая сессия в той же папке: пустая, без ботов и групп
   newSession: async (actor, a) => {
-    if (!ctx) err('Сессия не открыта')
+    if (!ctx) err(tr('Сессия не открыта'))
     const e = createSessionEntry(ctx.folder, a.name)
     await openSession(e.id)
-    toast('Новая сессия: пустая, добавьте ботов')
+    toast(tr('Новая сессия: пустая, добавьте ботов'))
     return { id: e.id }
   },
   // Сброс: всё внутри этой сессии удаляется (боты, группы, переписка, память), сама сессия остаётся
-  resetSession: async () => { await resetSession(); toast('Сессия сброшена'); return {} },
+  resetSession: async () => { await resetSession(); toast(tr('Сессия сброшена')); return {} },
   renameSession: (actor, a) => {
-    if (!ctx) err('Сессия не открыта')
+    if (!ctx) err(tr('Сессия не открыта'))
     ctx.name = String(a.name ?? '').trim().slice(0, 60) || ctx.name
     saveRecent(); emit(launcherInfo())
     emit({ t: 'set', key: 'session', value: { id: ctx.id, name: ctx.name, folder: ctx.folder } })
   },
   forgetSession: (actor, a) => {
-    if (ctx?.id === a.id) err('Эта сессия сейчас открыта')
+    if (ctx?.id === a.id) err(tr('Эта сессия сейчас открыта'))
     recent.sessions = recent.sessions.filter((s) => s.id !== a.id)
     saveRecent(); emit(launcherInfo())
   },
@@ -916,23 +922,23 @@ export const commands = {
   setSettings: (actor, a) => { S.settings = { ...S.settings, ...a.patch }; emit({ t: 'set', key: 'settings', value: S.settings }); persist(); waiters.splice(0).forEach((r) => r()) },
   addFolder: async (actor, a) => {
     const p = String(a.path ?? '').trim().replace(/^"|"$/g, '')
-    if (!p || !existsSync(p) || !statSync(p).isDirectory()) err('Такой папки нет')
+    if (!p || !existsSync(p) || !statSync(p).isDirectory()) err(tr('Такой папки нет'))
     if (!S.folders.includes(p)) S.folders.push(p)
     persist(); await refreshWorkspace()
   },
   setRemote: async (actor, a) => {
     const url = String(a.url ?? '').trim()
-    if (!url) err('Нужен адрес репозитория')
+    if (!url) err(tr('Нужен адрес репозитория'))
     const r = await setRemote(WORKSPACE, url)
-    if (!r.ok) err(r.err || 'Не удалось задать remote')
+    if (!r.ok) err(r.err || tr('Не удалось задать remote'))
     await refreshWorkspace()
-    toast('Remote origin задан')
+    toast(tr('Remote origin задан'))
   },
   refreshWorkspace: async () => { await refreshWorkspace() },
 
   upload: (actor, a) => {
     const buf = Buffer.from(String(a.data ?? ''), 'base64')
-    if (buf.length > 25 * 1024 * 1024) err('Файл больше 25 МБ')
+    if (buf.length > 25 * 1024 * 1024) err(tr('Файл больше 25 МБ'))
     const safe = basename(String(a.name || 'file')).replace(/[^\w.\-а-яА-Я ]/g, '_')
     const id = `${uid()}-${safe}`
     const path = join(UPLOADS, id)
@@ -952,7 +958,7 @@ export function tickSchedules(d = new Date()) {
       if (!cronMatches(s.cron, d) || lastFire.get(s.id) === key) continue
       lastFire.set(s.id, key)
       const dm = dmChannel('me', b.id)
-      sysMsg(dm.id, `Расписание ${s.cron}: ${s.prompt}`)
+      sysMsg(dm.id, tr('Расписание {c}: {p}', { c: s.cron, p: s.prompt }))
       runBot({ botId: b.id, channelId: dm.id, from: 'me', text: s.prompt, depth: 0, trigger: null })
     }
   }
@@ -1052,4 +1058,4 @@ export function agentCall(token, action, args, files = []) {
 export const getState = () => S
 
 // Команды, доступные без открытой сессии
-export const GLOBAL_COMMANDS = new Set(['claudeLogin', 'claudeStatus', 'saveProvider', 'refreshModels', 'deleteProvider', 'setModelLite', 'addModel', 'removeModel', 'generatePrompt', 'listRecent', 'inspectFolder', 'createSession', 'openSession', 'forgetSession'])
+export const GLOBAL_COMMANDS = new Set(['setLang', 'claudeLogin', 'claudeStatus', 'saveProvider', 'refreshModels', 'deleteProvider', 'setModelLite', 'addModel', 'removeModel', 'generatePrompt', 'listRecent', 'inspectFolder', 'createSession', 'openSession', 'forgetSession'])

@@ -1,4 +1,5 @@
 // Связь с локальным сервером Clawds: команды и поток событий.
+import { t } from './i18n'
 const URL_WS = `ws://127.0.0.1:8787`
 
 type Handlers = { onEvent: (e: any) => void; onStatus: (open: boolean) => void }
@@ -15,7 +16,7 @@ export function connect(h: Handlers) {
     ws.onopen = () => h.onStatus(true)
     ws.onclose = () => {
       h.onStatus(false)
-      pending.forEach((p) => p.fail(new Error('Связь с сервером потеряна')))
+      pending.forEach((p) => p.fail(new Error(t('Связь с сервером потеряна'))))
       pending.clear()
       setTimeout(open, 2500)
     }
@@ -34,7 +35,7 @@ export function connect(h: Handlers) {
 
 export function call<T = any>(name: string, args: Record<string, unknown> = {}): Promise<T> {
   return new Promise((ok, fail) => {
-    if (!ws || ws.readyState !== 1) return fail(new Error('Сервер не подключён'))
+    if (!ws || ws.readyState !== 1) return fail(new Error(t('Сервер не подключён')))
     const id = ++seq
     pending.set(id, { ok, fail })
     ws.send(JSON.stringify({ t: 'cmd', id, name, args }))

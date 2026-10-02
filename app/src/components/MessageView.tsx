@@ -3,6 +3,7 @@ import { ChevronRight, Loader2, Check, MessageSquare, Pin, Wrench, FileText, Dow
 import { useStore } from '../store'
 import type { Attachment, Message, ToolCall } from '../types'
 import Markdown from './Markdown'
+import { t } from '../i18n'
 import { Emoji, REACTIONS, UserAvatar, authorName, fmtSize, fmtTime } from './ui'
 
 const toolKind = (t: string) =>
@@ -21,7 +22,7 @@ function ToolGroup({ tools }: { tools: ToolCall[] }) {
         {active ? (
           <span className="tg-title"><b>{active.tool}</b> <code>{active.input}</code></span>
         ) : (
-          <span className="tg-title">Инструментов: <b>{tools.length}</b><span className="sub"> · {names.slice(0, 3).join(', ')}{names.length > 3 ? '…' : ''}</span></span>
+          <span className="tg-title">{t('Инструментов:')} <b>{tools.length}</b><span className="sub"> · {names.slice(0, 3).join(', ')}{names.length > 3 ? '…' : ''}</span></span>
         )}
         {active ? <Loader2 size={14} className="spin" /> : <Check size={14} className="ok" />}
       </button>
@@ -103,7 +104,7 @@ export default function MessageView({
       {!mine && <div className="msg-av">{pos.last && <UserAvatar id={msg.authorId} size={34} />}</div>}
       <div className="bubble-wrap">
         <div className={'bubble' + (msg.pinned ? ' pinned' : '') + (msg.error ? ' err' : '') + (msg.tier === 1 ? ' t1' : '')} onDoubleClick={() => react(msg.id, 'heart')}>
-          {msg.tier === 1 && <div className="t1-label"><Emoji k="bolt" size={14} /> Важное · для всех</div>}
+          {msg.tier === 1 && <div className="t1-label"><Emoji k="bolt" size={14} /> {t('Важное · для всех')}</div>}
           {!mine && pos.first && showName && (
             <button className="b-name" style={{ color: bot?.color }} onClick={() => openProfile(msg.authorId)}>{authorName(msg.authorId, bots)}</button>
           )}
@@ -132,18 +133,18 @@ export default function MessageView({
         )}
         {!inThread && replies > 0 && (
           <button className="thread-link" onClick={() => setPanel({ kind: 'thread', id: msg.id })}>
-            <MessageSquare size={13} /> {replies} {replies === 1 ? 'ответ' : 'ответов'}
+            <MessageSquare size={13} /> {replies} {replies === 1 ? t('ответ') : t('ответов')}
           </button>
         )}
 
         {!msg.streaming && (
           <div className="msg-actions">
             {REACTIONS.map((e) => (
-              <button key={e} className="qr" title="Реакция" onClick={(ev) => { ev.stopPropagation(); react(msg.id, e); setBar(false) }}><Emoji k={e} size={20} /></button>
+              <button key={e} className="qr" title={t('Реакция')} onClick={(ev) => { ev.stopPropagation(); react(msg.id, e); setBar(false) }}><Emoji k={e} size={20} /></button>
             ))}
             <span className="qsep" />
-            {!inThread && <button className="icon-btn" title="Тред" onClick={() => setPanel({ kind: 'thread', id: msg.id })}><MessageSquare size={16} /></button>}
-            <button className="icon-btn" title="Закрепить" onClick={() => pin(msg.id)}><Pin size={16} /></button>
+            {!inThread && <button className="icon-btn" title={t('Тред')} onClick={() => setPanel({ kind: 'thread', id: msg.id })}><MessageSquare size={16} /></button>}
+            <button className="icon-btn" title={t('Закрепить')} onClick={() => pin(msg.id)}><Pin size={16} /></button>
           </div>
         )}
       </div>

@@ -26,6 +26,7 @@ export const MODEL_GROUPS: { label: string; items: { id: string; name: string }[
   },
 ]
 
+import { t } from './i18n'
 // Эндпоинты приходят с сервера; здесь копия для названий и проверок
 import type { Provider } from './types'
 let registry: Provider[] = []
@@ -42,9 +43,10 @@ export const modelName = (id: string) => {
   const e = parseEp(id)
   if (e) {
     const p = registry.find((x) => x.id === e.pid)
-    return p ? (p.models.find((x) => x.id === e.id)?.name ?? e.id) + ' · ' + p.name : e.id + ' (эндпоинт удалён)'
+    return p ? (p.models.find((x) => x.id === e.id)?.name ?? e.id) + ' · ' + p.name : e.id + ' ' + t('(эндпоинт удалён)')
   }
-  return MODEL_GROUPS.flatMap((g) => g.items).find((m) => m.id === id)?.name ?? id
+  const n = MODEL_GROUPS.flatMap((g) => g.items).find((m) => m.id === id)?.name
+  return n ? t(n) : id
 }
 
 export const EFFORTS = [

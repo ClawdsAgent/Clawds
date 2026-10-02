@@ -4,6 +4,7 @@ import { useStore } from '../store'
 import MessageView from './MessageView'
 import Composer from './Composer'
 import { Avatar, UserAvatar } from './ui'
+import { t } from '../i18n'
 
 export default function ChatView() {
   const { channels, messages, active, bots, typing, setPanel, panel, muted, toggleMute, leaveChannel, block, openProfile, backToList, setModal } = useStore()
@@ -28,14 +29,14 @@ export default function ChatView() {
           <div className="dots big"><u /><u /><u /></div>
           {channels.length === 0 ? (
             <>
-              <h2>Здесь пока пусто</h2>
-              <p>В этой сессии нет ботов и групп. Создайте первого бота, потом можно собрать из ботов группу.</p>
+              <h2>{t('Здесь пока пусто')}</h2>
+              <p>{t('В этой сессии нет ботов и групп. Создайте первого бота, потом можно собрать из ботов группу.')}</p>
               <div className="row-btns">
-                <button className="btn primary" onClick={() => setModal('createBot')}>Создать бота</button>
-                <button className="btn" disabled={bots.length === 0} onClick={() => setModal('createGroup')}>Создать группу</button>
+                <button className="btn primary" onClick={() => setModal('createBot')}>{t('Создать бота')}</button>
+                <button className="btn" disabled={bots.length === 0} onClick={() => setModal('createGroup')}>{t('Создать группу')}</button>
               </div>
             </>
-          ) : <h2>Выберите чат</h2>}
+          ) : <h2>{t('Выберите чат')}</h2>}
         </div>
       </main>
     )
@@ -47,8 +48,8 @@ export default function ChatView() {
   const typers = (typing[active] ?? []).map((id) => bots.find((b) => b.id === id)?.name).filter(Boolean)
   const isMuted = muted.includes(ch.id)
   const sub = typers.length
-    ? `${typers.join(', ')} ${typers.length > 1 ? 'печатают' : 'печатает'}`
-    : !member ? 'переписка ботов, вы наблюдаете' : bot ? bot.role : `${ch.members.length} участников`
+    ? `${typers.join(', ')} ${typers.length > 1 ? t('печатают') : t('печатает')}`
+    : !member ? t('переписка ботов, вы наблюдаете') : bot ? bot.role : t('{n} участников', { n: ch.members.length })
 
   return (
     <main className="chat">
@@ -76,9 +77,9 @@ export default function ChatView() {
             <>
               <div className="menu-back" onClick={() => setMenu(false)} />
               <div className="menu">
-                <button onClick={() => { toggleMute(ch.id); setMenu(false) }}>{isMuted ? <Bell size={16} /> : <BellOff size={16} />} {isMuted ? 'Включить звук' : 'Заглушить'}</button>
-                {ch.kind === 'channel' && member && <button className="danger" onClick={() => { leaveChannel(ch.id); setMenu(false) }}><LogOut size={16} /> Покинуть группу</button>}
-                {bot && member && <button className="danger" onClick={() => { block(bot.id); setMenu(false) }}><Ban size={16} /> Заблокировать</button>}
+                <button onClick={() => { toggleMute(ch.id); setMenu(false) }}>{isMuted ? <Bell size={16} /> : <BellOff size={16} />} {isMuted ? t('Включить звук') : t('Заглушить')}</button>
+                {ch.kind === 'channel' && member && <button className="danger" onClick={() => { leaveChannel(ch.id); setMenu(false) }}><LogOut size={16} /> {t('Покинуть группу')}</button>}
+                {bot && member && <button className="danger" onClick={() => { block(bot.id); setMenu(false) }}><Ban size={16} /> {t('Заблокировать')}</button>}
               </div>
             </>
           )}
@@ -86,7 +87,7 @@ export default function ChatView() {
       </header>
 
       <div className="messages" key={active} ref={boxRef} onScroll={(e) => { const el = e.currentTarget; const d = el.scrollHeight - el.scrollTop - el.clientHeight; nearBottom.current = d < 120; setAway(d > 260) }}>
-        <div className="date-chip">Сегодня</div>
+        <div className="date-chip">{t('Сегодня')}</div>
         {list.map((m, i) => {
           const prev = list[i - 1]
           const next = list[i + 1]
@@ -98,7 +99,7 @@ export default function ChatView() {
       </div>
 
       {away && <button className="to-bottom" onClick={() => endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })}><ArrowDown size={18} /></button>}
-      {member ? <Composer channelId={active} /> : <div className="spectate">Вы наблюдаете за перепиской. Писать здесь могут только участники.</div>}
+      {member ? <Composer channelId={active} /> : <div className="spectate">{t('Вы наблюдаете за перепиской. Писать здесь могут только участники.')}</div>}
     </main>
   )
 }

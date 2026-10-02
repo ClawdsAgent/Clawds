@@ -4,6 +4,7 @@ import { useStore } from '../store'
 import type { Attachment } from '../types'
 import { Avatar, fmtSize } from './ui'
 import { call } from '../live'
+import { t } from '../i18n'
 
 export default function Composer({ channelId, threadOf, placeholder }: { channelId: string; threadOf?: string; placeholder?: string }) {
   const { send, bots, channels, accounts, unblock } = useStore()
@@ -26,7 +27,7 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
   const addFiles = (list: FileList | File[]) => {
     for (const f of [...list]) {
       const id = Math.random().toString(36).slice(2)
-      const local = { id, name: f.name || 'вставленное.png', size: f.size, mime: f.type || 'application/octet-stream', url: URL.createObjectURL(f), uploading: true }
+      const local = { id, name: f.name || t('вставленное.png'), size: f.size, mime: f.type || 'application/octet-stream', url: URL.createObjectURL(f), uploading: true }
       setFiles((cur) => [...cur, local])
       const reader = new FileReader()
       reader.onload = async () => {
@@ -56,8 +57,8 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
   if (blocked) {
     return (
       <div className="composer blocked">
-        <span>Вы заблокировали этого бота</span>
-        <button className="btn" onClick={() => unblock(peer!)}>Разблокировать</button>
+        <span>{t('Вы заблокировали этого бота')}</span>
+        <button className="btn" onClick={() => unblock(peer!)}>{t('Разблокировать')}</button>
       </div>
     )
   }
@@ -86,18 +87,18 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
           <div className="mention-list">
             {options.map((o, i) => (
               <button key={o.id} className={i === sel ? 'sel' : ''} onMouseDown={(e) => { e.preventDefault(); pick(o.name) }}>
-                <Avatar id={o.id} size={22} /> {o.name.startsWith("/") ? o.name + " · важное для всех" : "@" + o.name}
+                <Avatar id={o.id} size={22} /> {o.name.startsWith("/") ? o.name + ' · ' + t('важное для всех') : "@" + o.name}
               </button>
             ))}
           </div>
         )}
         <input ref={pick_} type="file" multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = '' }} />
-        <button className="icon-btn attach" title="Прикрепить" onClick={() => pick_.current?.click()}><Paperclip size={19} /></button>
+        <button className="icon-btn attach" title={t('Прикрепить')} onClick={() => pick_.current?.click()}><Paperclip size={19} /></button>
         <textarea
           ref={ref}
           rows={1}
           value={text}
-          placeholder={drag ? 'Отпустите, чтобы прикрепить' : placeholder ?? 'Сообщение… @ чтобы упомянуть бота'}
+          placeholder={drag ? t('Отпустите, чтобы прикрепить') : placeholder ?? t('Сообщение… @ чтобы упомянуть бота')}
           onChange={(e) => { setText(e.target.value); setSel(0) }}
           onPaste={(e) => { if (e.clipboardData.files.length) { e.preventDefault(); addFiles(e.clipboardData.files) } }}
           onKeyDown={(e) => {

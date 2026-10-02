@@ -4,6 +4,7 @@ import { WebSocketServer } from 'ws'
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { join, extname, normalize, sep } from 'node:path'
 import { randomBytes } from 'node:crypto'
+import { tr } from './lib/locale.mjs'
 import { init, snapshot, launcherInfo, connInfo, isOpen, GLOBAL_COMMANDS, onEvent, commands, agentCall, tickSchedules, ROOT, UPLOADS, PORT } from './core.mjs'
 
 // Порт с ботами в режиме bypassPermissions = выполнение кода, поэтому только 127.0.0.1
@@ -66,8 +67,8 @@ wss.on('connection', (ws) => {
     if (m.t !== 'cmd' || typeof m.name !== 'string') return
     const fn = commands[m.name]
     try {
-      if (!fn) throw new Error(`Неизвестная команда ${m.name}`)
-      if (!isOpen() && !GLOBAL_COMMANDS.has(m.name)) throw new Error('Сначала откройте папку или сессию')
+      if (!fn) throw new Error(tr('Неизвестная команда {n}', { n: m.name }))
+      if (!isOpen() && !GLOBAL_COMMANDS.has(m.name)) throw new Error(tr('Сначала откройте папку или сессию'))
       const data = await fn('me', { ...(m.args ?? {}), except: clientId })
       send({ t: 'res', id: m.id, ok: true, data })
     } catch (e) {

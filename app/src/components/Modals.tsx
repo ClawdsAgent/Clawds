@@ -5,6 +5,7 @@ import { Avatar, Modal, Toggle, authorName, fmtReset, fmtSize } from './ui'
 import { AccountModal, AccountsModal, ProfileModal } from './Accounts'
 import { EffortSelect, ModelSelect } from './ModelPick'
 import Connections, { LoginBar } from './Connections'
+import { t } from '../i18n'
 
 function CreateBot() {
   const { createBot, generatePrompt, setModal, bots } = useStore()
@@ -33,25 +34,25 @@ function CreateBot() {
   }
 
   return (
-    <Modal title="Новый бот" onClose={() => setModal(null)} wide>
-      <label>Название</label>
-      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="например, video-assembler" />
-      {taken && <div className="err">Такой бот уже есть</div>}
-      <label>Что он делает (одно-два предложения)</label>
-      <textarea value={role} onChange={(e) => setRole(e.target.value)} placeholder="Например: собирает видео из готовых медиа и инфографики" rows={2} />
+    <Modal title={t('Новый бот')} onClose={() => setModal(null)} wide>
+      <label>{t('Название')}</label>
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={t('например, video-assembler')} />
+      {taken && <div className="err">{t('Такой бот уже есть')}</div>}
+      <label>{t('Что он делает (одно-два предложения)')}</label>
+      <textarea value={role} onChange={(e) => setRole(e.target.value)} placeholder={t('Например: собирает видео из готовых медиа и инфографики')} rows={2} />
       <div className="gen-row">
-        <button className="btn" disabled={!name.trim() || busy !== ''} onClick={gen}>{busy === 'gen' ? 'Придумываю…' : 'Придумать системный промпт'}</button>
-        <span className="sub">Haiku напишет подробный промпт на 5 предложений, его можно править</span>
+        <button className="btn" disabled={!name.trim() || busy !== ''} onClick={gen}>{busy === 'gen' ? t('Придумываю…') : t('Придумать системный промпт')}</button>
+        <span className="sub">{t('Haiku напишет подробный промпт на 5 предложений, его можно править')}</span>
       </div>
-      <label>Системный промпт (роль)</label>
-      <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Пусто: при создании придумается автоматически из описания" rows={6} />
+      <label>{t('Системный промпт (роль)')}</label>
+      <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t('Пусто: при создании придумается автоматически из описания')} rows={6} />
       <div className="two-col">
-        <div><label>Модель</label><ModelSelect value={model} onChange={setModel} /></div>
-        <div><label>Размышления</label><EffortSelect value={effort} model={model} onChange={setEffort} /></div>
+        <div><label>{t('Модель')}</label><ModelSelect value={model} onChange={setModel} /></div>
+        <div><label>{t('Размышления')}</label><EffortSelect value={effort} model={model} onChange={setEffort} /></div>
       </div>
       <div className="modal-foot">
-        <button className="btn ghost" onClick={() => setModal(null)}>Отмена</button>
-        <button className="btn primary" disabled={!name.trim() || taken || busy !== ''} onClick={create}>{busy === 'create' ? 'Создаю…' : 'Создать'}</button>
+        <button className="btn ghost" onClick={() => setModal(null)}>{t('Отмена')}</button>
+        <button className="btn primary" disabled={!name.trim() || taken || busy !== ''} onClick={create}>{busy === 'create' ? t('Создаю…') : t('Создать')}</button>
       </div>
     </Modal>
   )
@@ -62,10 +63,10 @@ function CreateGroup() {
   const [name, setName] = useState('')
   const [sel, setSel] = useState<string[]>([])
   return (
-    <Modal title="Новая группа" onClose={() => setModal(null)}>
-      <label>Название</label>
-      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="например, release" />
-      <label>Участники</label>
+    <Modal title={t('Новая группа')} onClose={() => setModal(null)}>
+      <label>{t('Название')}</label>
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={t('например, release')} />
+      <label>{t('Участники')}</label>
       <div className="check-list">
         {bots.map((b) => (
           <label className="check" key={b.id}>
@@ -75,8 +76,8 @@ function CreateGroup() {
         ))}
       </div>
       <div className="modal-foot">
-        <button className="btn ghost" onClick={() => setModal(null)}>Отмена</button>
-        <button className="btn primary" disabled={!name.trim()} onClick={() => createGroup(name, sel)}>Создать</button>
+        <button className="btn ghost" onClick={() => setModal(null)}>{t('Отмена')}</button>
+        <button className="btn primary" disabled={!name.trim()} onClick={() => createGroup(name, sel)}>{t('Создать')}</button>
       </div>
     </Modal>
   )
@@ -86,7 +87,7 @@ function Bar({ label, pct, reset }: { label: string; pct: number; reset: number 
   const cls = pct >= 85 ? 'red' : pct >= 65 ? 'yellow' : ''
   return (
     <div className="qbig">
-      <div className="qhead"><b>{label}</b><span>{pct > 0 || reset ? Math.round(pct) + '%' : '—'} · сброс через {fmtReset(reset)}</span></div>
+      <div className="qhead"><b>{label}</b><span>{pct > 0 || reset ? Math.round(pct) + '%' : '—'} · {t('сброс через')} {fmtReset(reset)}</span></div>
       <div className={'bar big ' + cls}><i style={{ width: pct + '%' }} /></div>
     </div>
   )
@@ -112,19 +113,33 @@ function NumRow({ label, sub, value, min, max, onCommit }: { label: string; sub?
   )
 }
 
+function LangRow() {
+  const { lang, setLang } = useStore()
+  return (
+    <div className="set-row">
+      <div><b>{t('Язык интерфейса')}</b><div className="sub">{t('Боты тоже будут отвечать на этом языке')}</div></div>
+      <select value={lang} onChange={(e) => setLang(e.target.value as 'ru' | 'en')}>
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  )
+}
+
 function SettingsModal() {
   const { quota, settings, setSettings, setModal, bots, stopAll } = useStore()
   const total = bots.reduce((a, b) => a + b.runsToday, 0) || 1
   return (
-    <Modal title="Настройки" onClose={() => setModal(null)} wide>
+    <Modal title={t('Настройки')} onClose={() => setModal(null)} wide>
       <LoginBar />
-      <button className="btn" onClick={() => setModal('account')}>Мой аккаунт, юзернейм и номер</button>
-      <button className="btn" onClick={() => setModal('connections')}>Подключения: вход в Claude и свои эндпоинты</button>
-      <button className="btn danger" onClick={stopAll}>Остановить всех ботов</button>
-      <h3>Квота Claude</h3>
-      <Bar label="5-часовое окно" pct={quota.fiveHour.pct} reset={quota.fiveHour.resetsAt} />
-      <Bar label="Недельный лимит" pct={quota.sevenDay.pct} reset={quota.sevenDay.resetsAt} />
-      <h3>Расход по ботам (запуски сегодня)</h3>
+      <button className="btn" onClick={() => setModal('account')}>{t('Мой аккаунт, юзернейм и номер')}</button>
+      <button className="btn" onClick={() => setModal('connections')}>{t('Подключения: вход в Claude и свои эндпоинты')}</button>
+      <button className="btn danger" onClick={stopAll}>{t('Остановить всех ботов')}</button>
+      <LangRow />
+      <h3>{t('Квота Claude')}</h3>
+      <Bar label={t('5-часовое окно')} pct={quota.fiveHour.pct} reset={quota.fiveHour.resetsAt} />
+      <Bar label={t('Недельный лимит')} pct={quota.sevenDay.pct} reset={quota.sevenDay.resetsAt} />
+      <h3>{t('Расход по ботам (запуски сегодня)')}</h3>
       {[...bots].sort((a, b) => b.runsToday - a.runsToday).map((b) => (
         <div className="usage-row" key={b.id}>
           <Avatar id={b.id} size={20} /> <span className="w80">{b.name}</span>
@@ -132,19 +147,19 @@ function SettingsModal() {
           <b>{b.runsToday}</b>
         </div>
       ))}
-      <h3>Права и инструменты</h3>
-      <div className="set-row"><div><b>Полный доступ без подтверждений</b><div className="sub">bypassPermissions для всех ботов</div></div><Toggle on={settings.fullAccess} onChange={(v) => setSettings({ fullAccess: v })} /></div>
-      <div className="set-row"><div><b>Computer use</b><div className="sub">Управление рабочим столом</div></div><Toggle on={settings.computerUse} onChange={(v) => setSettings({ computerUse: v })} /></div>
-      <div className="set-row"><div><b>Claude in Chrome</b><div className="sub">Браузер для ботов</div></div><Toggle on={settings.claudeInChrome} onChange={(v) => setSettings({ claudeInChrome: v })} /></div>
-      <h3>Ограничители</h3>
-      <NumRow label="Одновременных ботов" sub="Остальные ждут в очереди" value={settings.maxParallel} min={1} max={32} onCommit={(v) => setSettings({ maxParallel: v })} />
-      <NumRow label="Пауза ботов при недельной квоте, %" sub="0 = не останавливать" value={settings.pauseAtPct} min={0} max={100} onCommit={(v) => setSettings({ pauseAtPct: v })} />
-      <NumRow label="Глубина цепочки «бот зовёт бота»" sub="Сколько ботов подряд могут будить друг друга" value={settings.maxChainDepth} min={1} max={50} onCommit={(v) => setSettings({ maxChainDepth: v })} />
-      <h3>Защита от петель между ботами</h3>
-      <NumRow label="Передач на одну пару ботов" sub="0 = без ограничения" value={settings.handoffPair} min={0} max={500} onCommit={(v) => setSettings({ handoffPair: v })} />
-      <NumRow label="Передач всего" sub="0 = без ограничения" value={settings.handoffTotal} min={0} max={2000} onCommit={(v) => setSettings({ handoffTotal: v })} />
-      <NumRow label="Окно для этих лимитов, минут" value={settings.handoffWindow} min={1} max={1440} onCommit={(v) => setSettings({ handoffWindow: v })} />
-      <NumRow label="Пауза между /all от ботов, минут" sub="0 = без ограничения" value={settings.allCooldown} min={0} max={1440} onCommit={(v) => setSettings({ allCooldown: v })} />
+      <h3>{t('Права и инструменты')}</h3>
+      <div className="set-row"><div><b>{t('Полный доступ без подтверждений')}</b><div className="sub">{t('bypassPermissions для всех ботов')}</div></div><Toggle on={settings.fullAccess} onChange={(v) => setSettings({ fullAccess: v })} /></div>
+      <div className="set-row"><div><b>Computer use</b><div className="sub">{t('Управление рабочим столом')}</div></div><Toggle on={settings.computerUse} onChange={(v) => setSettings({ computerUse: v })} /></div>
+      <div className="set-row"><div><b>Claude in Chrome</b><div className="sub">{t('Браузер для ботов')}</div></div><Toggle on={settings.claudeInChrome} onChange={(v) => setSettings({ claudeInChrome: v })} /></div>
+      <h3>{t('Ограничители')}</h3>
+      <NumRow label={t('Одновременных ботов')} sub={t('Остальные ждут в очереди')} value={settings.maxParallel} min={1} max={32} onCommit={(v) => setSettings({ maxParallel: v })} />
+      <NumRow label={t('Пауза ботов при недельной квоте, %')} sub={t('0 = не останавливать')} value={settings.pauseAtPct} min={0} max={100} onCommit={(v) => setSettings({ pauseAtPct: v })} />
+      <NumRow label={t('Глубина цепочки «бот зовёт бота»')} sub={t('Сколько ботов подряд могут будить друг друга')} value={settings.maxChainDepth} min={1} max={50} onCommit={(v) => setSettings({ maxChainDepth: v })} />
+      <h3>{t('Защита от петель между ботами')}</h3>
+      <NumRow label={t('Передач на одну пару ботов')} sub={t('0 = без ограничения')} value={settings.handoffPair} min={0} max={500} onCommit={(v) => setSettings({ handoffPair: v })} />
+      <NumRow label={t('Передач всего')} sub={t('0 = без ограничения')} value={settings.handoffTotal} min={0} max={2000} onCommit={(v) => setSettings({ handoffTotal: v })} />
+      <NumRow label={t('Окно для этих лимитов, минут')} value={settings.handoffWindow} min={1} max={1440} onCommit={(v) => setSettings({ handoffWindow: v })} />
+      <NumRow label={t('Пауза между /all от ботов, минут')} sub={t('0 = без ограничения')} value={settings.allCooldown} min={0} max={1440} onCommit={(v) => setSettings({ allCooldown: v })} />
     </Modal>
   )
 }
@@ -154,8 +169,8 @@ function SearchModal() {
   const [q, setQ] = useState('')
   const res = q.trim() ? messages.filter((m) => m.text.toLowerCase().includes(q.toLowerCase())).slice(-20).reverse() : []
   return (
-    <Modal title="Поиск" onClose={() => setModal(null)}>
-      <div className="search-box"><Search size={16} /><input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по всем сообщениям" /></div>
+    <Modal title={t('Поиск')} onClose={() => setModal(null)}>
+      <div className="search-box"><Search size={16} /><input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Поиск по всем сообщениям')} /></div>
       <div className="results">
         {res.map((m) => (
           <button key={m.id} onClick={() => { setActive(m.channelId); setModal(null) }}>
@@ -163,7 +178,7 @@ function SearchModal() {
             {m.text}
           </button>
         ))}
-        {q.trim() && res.length === 0 && <div className="sub">Ничего не найдено</div>}
+        {q.trim() && res.length === 0 && <div className="sub">{t('Ничего не найдено')}</div>}
       </div>
     </Modal>
   )
@@ -198,7 +213,7 @@ export function Lightbox() {
     <div className="overlay light" onMouseDown={() => setLightbox(null)}>
       <div className="lb" onMouseDown={(e) => e.stopPropagation()}>
         {img ? <img src={lightbox.url} alt={lightbox.name} /> : <div className="lb-file">{lightbox.name}</div>}
-        <div className="lb-bar"><b>{lightbox.name}</b><span>{fmtSize(lightbox.size)}</span><a className="btn" href={lightbox.url} download={lightbox.name}>Скачать</a></div>
+        <div className="lb-bar"><b>{lightbox.name}</b><span>{fmtSize(lightbox.size)}</span><a className="btn" href={lightbox.url} download={lightbox.name}>{t('Скачать')}</a></div>
       </div>
     </div>
   )

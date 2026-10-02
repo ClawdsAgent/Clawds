@@ -5,6 +5,7 @@ if (process.env.FAKE_LOG) appendFileSync(process.env.FAKE_LOG, process.argv.slic
 let prompt = ''
 process.stdin.on('data', (d) => (prompt += d))
 process.stdin.on('end', async () => {
+  if (process.env.FAKE_LOG) appendFileSync(process.env.FAKE_LOG, 'PROMPT_LANG=' + (/LANGUAGE: write every chat message/.test(prompt) ? 'en' : /ЯЗЫК: пиши/.test(prompt) ? 'ru' : '?') + '\n')
   const out = (o) => console.log(JSON.stringify(o))
   const w = (ms) => new Promise((r) => setTimeout(r, ms))
   const found = [...prompt.matchAll(/FAKE_SAY=(.*)/g)]

@@ -1,6 +1,7 @@
 import { Plus, Search, Settings as Cog, FolderGit2, BellOff, Users, MessageSquare } from 'lucide-react'
 import { useStore } from '../store'
 import { Avatar, authorName, fmtTime } from './ui'
+import { t } from '../i18n'
 
 export default function Sidebar() {
   const { channels, bots, messages, active, setActive, setModal, setPanel, quota, typing, panel, muted, accounts, live, unreadOf, running, stopAll } = useStore()
@@ -16,23 +17,23 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="side-top">
         <button className="search-pill" onClick={() => setModal('search')}>
-          <Search size={16} /> Поиск <kbd>Ctrl K</kbd>
+          <Search size={16} /> {t('Поиск')} <kbd>Ctrl K</kbd>
         </button>
-        <button className="round-btn" title="Создать бота" onClick={() => setModal('createBot')}><Plus size={18} /></button>
+        <button className="round-btn" title={t('Создать бота')} onClick={() => setModal('createBot')}><Plus size={18} /></button>
       </div>
 
       <div className="chips">
-        <button className="chip" onClick={() => setModal('createGroup')}>+ Группа</button>
-        <button className="chip" onClick={() => setModal('accounts')}><Users size={13} /> Аккаунты</button>
-        {running > 0 && <button className="chip stop" onClick={stopAll} title="Остановить всех ботов">Стоп · {running}</button>}
-        <span className={'live-dot' + (live ? ' on' : '')} title={live ? 'Сервер подключён' : 'Нет связи с сервером'}>{live ? 'online' : 'offline'}</span>
+        <button className="chip" onClick={() => setModal('createGroup')}>{t('+ Группа')}</button>
+        <button className="chip" onClick={() => setModal('accounts')}><Users size={13} /> {t('Аккаунты')}</button>
+        {running > 0 && <button className="chip stop" onClick={stopAll} title={t('Остановить всех ботов')}>{t('Стоп')} · {running}</button>}
+        <span className={'live-dot' + (live ? ' on' : '')} title={live ? t('Сервер подключён') : t('Нет связи с сервером')}>{live ? 'online' : 'offline'}</span>
         <button className={'chip' + (panel.kind === 'workspace' ? ' on' : '')} onClick={() => setPanel(panel.kind === 'workspace' ? { kind: 'none' } : { kind: 'workspace' })}>
-          <FolderGit2 size={13} /> Воркспейс
+          <FolderGit2 size={13} /> {t('Воркспейс')}
         </button>
       </div>
 
       <div className="chatlist">
-        {rows.length === 0 && <div className="side-empty">Пока нет чатов. Нажмите + и создайте первого бота.</div>}
+        {rows.length === 0 && <div className="side-empty">{t('Пока нет чатов. Нажмите + и создайте первого бота.')}</div>}
         {rows.map(({ c, m }) => {
           const member = c.members.includes('me')
           const peer = c.kind === 'dm' ? c.members.find((x) => x !== 'me') : undefined
@@ -50,11 +51,11 @@ export default function Sidebar() {
                 </div>
                 <div className="cr-bottom">
                   {typers.length > 0 ? (
-                    <span className="cr-typing">{typers.join(', ')} печатает<i className="dots"><u /><u /><u /></i></span>
+                    <span className="cr-typing">{typers.join(', ')} {t('печатает')}<i className="dots"><u /><u /><u /></i></span>
                   ) : (
                     <span className="cr-prev">
-                      {!member && 'наблюдение · '}
-                      {m ? (c.kind === 'channel' || m.authorId === 'me' || !member ? authorName(m.authorId, bots) + ': ' : '') + (m.text || m.tools?.[0]?.tool || '…') : 'Нет сообщений'}
+                      {!member && t('наблюдение') + ' · '}
+                      {m ? (c.kind === 'channel' || m.authorId === 'me' || !member ? authorName(m.authorId, bots) + ': ' : '') + (m.text || m.tools?.[0]?.tool || '…') : t('Нет сообщений')}
                     </span>
                   )}
                   {unread > 0 && <span className={'badge' + (isMuted ? ' mute' : '')} key={unread}>{unread}</span>}
@@ -69,15 +70,15 @@ export default function Sidebar() {
         <Avatar id="me" size={38} />
         <div className="me-main">
           <div className="me-top"><b>{accounts.me?.name}</b><Cog size={15} /></div>
-          <div className="qline"><span>5 ч</span><div className="bar"><i style={{ width: quota.fiveHour.pct + '%' }} /></div><em>{pct(quota.fiveHour.pct)}</em></div>
-          <div className="qline"><span>нед</span><div className="bar"><i style={{ width: quota.sevenDay.pct + '%' }} /></div><em>{pct(quota.sevenDay.pct)}</em></div>
+          <div className="qline"><span>{t('5 ч')}</span><div className="bar"><i style={{ width: quota.fiveHour.pct + '%' }} /></div><em>{pct(quota.fiveHour.pct)}</em></div>
+          <div className="qline"><span>{t('нед')}</span><div className="bar"><i style={{ width: quota.sevenDay.pct + '%' }} /></div><em>{pct(quota.sevenDay.pct)}</em></div>
         </div>
       </button>
       <nav className="bottom-nav">
-        <button className="on"><MessageSquare size={20} />Чаты</button>
-        <button onClick={() => setModal('accounts')}><Users size={20} />Аккаунты</button>
-        <button onClick={() => setPanel({ kind: 'workspace' })}><FolderGit2 size={20} />Воркспейс</button>
-        <button onClick={() => setModal('settings')}><Cog size={20} />Я</button>
+        <button className="on"><MessageSquare size={20} />{t('Чаты')}</button>
+        <button onClick={() => setModal('accounts')}><Users size={20} />{t('Аккаунты')}</button>
+        <button onClick={() => setPanel({ kind: 'workspace' })}><FolderGit2 size={20} />{t('Воркспейс')}</button>
+        <button onClick={() => setModal('settings')}><Cog size={20} />{t('Я')}</button>
       </nav>
     </aside>
   )

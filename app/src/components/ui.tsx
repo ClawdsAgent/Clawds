@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useStore } from '../store'
+import { t, locale } from '../i18n'
 
 /* ---------- Аватары: у каждого бота свой «зверёк», собранный из хеша имени ---------- */
 
@@ -86,7 +87,7 @@ export function Emoji({ k, size = 18 }: { k: string; size?: number }) {
 /* ---------- Остальное ---------- */
 
 export function authorName(id: string, bots: { id: string; name: string }[]) {
-  return id === 'me' ? 'Вы' : bots.find((b) => b.id === id)?.name ?? id
+  return id === 'me' ? t('Вы') : bots.find((b) => b.id === id)?.name ?? id
 }
 
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
@@ -112,27 +113,27 @@ export function Toggle({ on, onChange, disabled }: { on: boolean; onChange: (v: 
 }
 
 export function fmtTime(ts: number) {
-  return new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  return new Date(ts).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
 }
 
 export function fmtAgo(ts: number) {
   const m = Math.round((Date.now() - ts) / 60000)
-  if (m < 1) return 'только что'
-  if (m < 60) return `${m} мин назад`
+  if (m < 1) return t('только что')
+  if (m < 60) return t('{m} мин назад', { m })
   const h = Math.round(m / 60)
-  if (h < 24) return `${h} ч назад`
+  if (h < 24) return t('{h} ч назад', { h })
   const d = Math.round(h / 24)
-  return d === 1 ? 'вчера' : `${d} дн назад`
+  return d === 1 ? t('вчера') : t('{d} дн назад', { d })
 }
 export const folderName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p
 
 export function fmtReset(ts: number) {
   if (!ts) return '—'
   const m = Math.max(0, Math.round((ts - Date.now()) / 60000))
-  if (m < 60) return `${m} мин`
+  if (m < 60) return t('{m} мин', { m })
   const h = Math.floor(m / 60)
-  if (h < 48) return `${h} ч ${m % 60} мин`
-  return `${Math.round(h / 24)} дн`
+  if (h < 48) return t('{h} ч {m} мин', { h, m: m % 60 })
+  return t('{d} дн', { d: Math.round(h / 24) })
 }
 
 /* ---------- Профиль, тосты, вложения ---------- */
@@ -140,7 +141,7 @@ export function fmtReset(ts: number) {
 export function UserAvatar({ id, size = 40 }: { id: string; size?: number }) {
   const openProfile = useStore((s) => s.openProfile)
   return (
-    <button className="av-btn" title="Профиль" onClick={(e) => { e.stopPropagation(); openProfile(id) }}>
+    <button className="av-btn" title={t('Профиль')} onClick={(e) => { e.stopPropagation(); openProfile(id) }}>
       <Avatar id={id} size={size} />
     </button>
   )
@@ -151,9 +152,9 @@ export function handle(a: { username: string; number: string; primary: 'username
 }
 
 export function fmtSize(n: number) {
-  if (n < 1024) return n + ' Б'
-  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' КБ'
-  return (n / 1024 / 1024).toFixed(1) + ' МБ'
+  if (n < 1024) return n + ' ' + t('Б')
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' ' + t('КБ')
+  return (n / 1024 / 1024).toFixed(1) + ' ' + t('МБ')
 }
 
 export function Toast() {

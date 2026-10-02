@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 import { EFFORTS, MODEL_GROUPS, epId, modelName, supportsEffort } from '../models'
 import { useStore } from '../store'
+import { t } from '../i18n'
 
 type Item = { id: string; name: string; sub?: string; lite?: boolean }
 const CAP = 80 // у OpenRouter сотни моделей: показываем первые, остальное находится поиском
@@ -38,8 +39,8 @@ export function ModelSelect({ value, onChange }: { value: string; onChange: (v: 
     const ok = (id: string, name: string) => !ql || id.toLowerCase().includes(ql) || name.toLowerCase().includes(ql)
     const out: { label: string; items: Item[]; total: number }[] = []
     for (const g of MODEL_GROUPS) {
-      const items = g.items.filter((m) => ok(m.id, m.name))
-      if (items.length) out.push({ label: g.label, items, total: items.length })
+      const items = g.items.filter((m) => ok(m.id, m.name)).map((m) => ({ ...m, name: t(m.name) }))
+      if (items.length) out.push({ label: t(g.label), items, total: items.length })
     }
     for (const p of providers) {
       const all = p.models.filter((m) => ok(m.id, m.name))
@@ -60,7 +61,7 @@ export function ModelSelect({ value, onChange }: { value: string; onChange: (v: 
           <div className="mp-search">
             <Search size={14} />
             <input
-              autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Найти модель"
+              autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Найти модель')}
               onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false) } }}
             />
           </div>
@@ -70,14 +71,14 @@ export function ModelSelect({ value, onChange }: { value: string; onChange: (v: 
                 <div className="mp-group">{g.label}</div>
                 {g.items.map((m) => (
                   <button type="button" key={m.id} className={'mp-item' + (m.id === value ? ' on' : '')} onClick={() => pick(m.id)}>
-                    <span className="mp-name">{m.name}{m.lite && <em>упрощённо</em>}</span>
+                    <span className="mp-name">{m.name}{m.lite && <em>{t('упрощённо')}</em>}</span>
                     {m.sub && <span className="mp-sub">{m.sub}</span>}
                   </button>
                 ))}
-                {g.total > g.items.length && <div className="mp-more">Ещё {g.total - g.items.length}: уточните поиск</div>}
+                {g.total > g.items.length && <div className="mp-more">{t('Ещё {n}: уточните поиск', { n: g.total - g.items.length })}</div>}
               </div>
             ))}
-            {groups.length === 0 && <div className="mp-more">Ничего не найдено</div>}
+            {groups.length === 0 && <div className="mp-more">{t('Ничего не найдено')}</div>}
           </div>
         </div>
       )}
@@ -88,8 +89,8 @@ export function ModelSelect({ value, onChange }: { value: string; onChange: (v: 
 export function EffortSelect({ value, model, onChange }: { value: string; model: string; onChange: (v: string) => void }) {
   const ok = supportsEffort(model)
   return (
-    <select value={ok ? value : 'default'} disabled={!ok} onChange={(e) => onChange(e.target.value)} title={ok ? '' : 'Эта модель не поддерживает уровни размышлений'}>
-      {EFFORTS.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+    <select value={ok ? value : 'default'} disabled={!ok} onChange={(e) => onChange(e.target.value)} title={ok ? '' : t('Эта модель не поддерживает уровни размышлений')}>
+      {EFFORTS.map((e) => <option key={e.id} value={e.id}>{t(e.name)}</option>)}
     </select>
   )
 }

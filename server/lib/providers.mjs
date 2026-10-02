@@ -1,4 +1,5 @@
 // Свои эндпоинты (OpenRouter, LiteLLM, любой Anthropic-совместимый адрес): список, модели, окружение для claude
+import { tr } from './locale.mjs'
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 
 export const PREFIX = 'ep:'
@@ -32,8 +33,8 @@ export function createStore(file) {
     view: () => list.map((p) => ({ id: p.id, name: p.name, baseUrl: p.baseUrl, auth: p.auth, liteDefault: !!p.liteDefault, keyTail: p.apiKey ? p.apiKey.slice(-4) : '', hasKey: !!p.apiKey, fetchedAt: p.fetchedAt ?? 0, error: p.error ?? '', models: p.models })),
     upsert(a) {
       const base = normalizeBase(a.baseUrl)
-      if (!base) throw new Error('Нужен адрес эндпоинта')
-      try { new URL(base) } catch { throw new Error('Адрес выглядит неверно') }
+      if (!base) throw new Error(tr('Нужен адрес эндпоинта'))
+      try { new URL(base) } catch { throw new Error(tr('Адрес выглядит неверно')) }
       const name = String(a.name ?? '').trim() || new URL(base).hostname
       let p = a.id ? list.find((x) => x.id === a.id) : null
       if (!p) {
@@ -90,7 +91,7 @@ export async function fetchModels(p) {
       return { ok: true, count: models.length }
     } catch (e) { lastErr = e.name === 'TimeoutError' ? 'таймаут запроса' : e.message }
   }
-  p.error = 'Список моделей не получен: ' + lastErr + '. Модели можно добавить вручную по ID.'
+  p.error = tr('Список моделей не получен: {e}. Модели можно добавить вручную по ID.', { e: lastErr })
   return { ok: false, error: p.error }
 }
 

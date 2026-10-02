@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Account, Attachment, Bot, Channel, Conn, Message, Quota, RecentSession, Session, Settings, Workspace } from './types'
 import { setProviderRegistry } from './models'
+import { t, getLang, setLangValue, type Lang } from './i18n'
 import { call } from './live'
 
 export type Panel = { kind: 'none' } | { kind: 'bot'; id: string } | { kind: 'workspace' } | { kind: 'members' } | { kind: 'thread'; id: string }
@@ -30,6 +31,7 @@ type State = {
   recent: RecentSession[]
   session: Session | null
   conn: Conn
+  lang: Lang
   // только интерфейс
   live: boolean
   ready: boolean
@@ -43,6 +45,7 @@ type State = {
   lastRead: Record<string, number>
 
   setLive: (v: boolean) => void
+  setLang: (l: Lang) => void
   apply: (ev: any) => void
   setActive: (id: string) => void
   setPanel: (p: Panel) => void
@@ -118,11 +121,19 @@ export const useStore = create<State>((set, get) => {
 
   return {
     bots: [], channels: [], messages: [], accounts: {}, workspace: emptyWorkspace, quota: emptyQuota, settings: emptySettings,
-    typing: {}, running: 0, muted: [], recent: [], session: null, conn: { loggedIn: true, pending: false, providers: [] },
+    typing: {}, running: 0, muted: [], recent: [], session: null, conn: { loggedIn: true, pending: false, providers: [] }, lang: getLang(),
     live: false, ready: false, active: '', panel: { kind: 'none' }, modal: null, profileId: null, lightbox: null, toast: null,
     mobileChat: false, lastRead: loadLastRead(),
 
-    setLive: (live) => set(live ? { live } : { live, ready: false }),
+    setLive: (live) => {
+      set(live ? { live } : { live, ready: false })
+      if (live) void cmd('setLang', { lang: get().lang }) // серверные сообщения и боты говорят на языке интерфейса
+    },
+    setLang: (lang) => {
+      setLangValue(lang)
+      set({ lang })
+      void cmd('setLang', { lang })
+    },
 
     apply: (ev) => {
       switch (ev.t) {
@@ -259,12 +270,12 @@ export const useStore = create<State>((set, get) => {
     claudeLogin: async () => { await cmd('claudeLogin') },
     saveProvider: async (a) => {
       const r = await cmd<{ id: string; ok: boolean; count: number; error?: string }>('saveProvider', a)
-      if (r) say(r.ok ? 'Эндпоинт сохранён, моделей: ' + r.count : (r.error ?? 'Эндпоинт сохранён, список моделей не получен'))
+      if (r) say(r.ok ? t('Эндпоинт сохранён, моделей: {n}', { n: r.count }) : (r.error ?? t('Эндпоинт сохранён, список моделей не получен')))
       return r
     },
     refreshModels: async (id) => {
       const r = await cmd<{ ok: boolean; count?: number; error?: string }>('refreshModels', { id })
-      if (r) say(r.ok ? 'Моделей: ' + r.count : (r.error ?? 'Не удалось обновить'))
+      if (r) say(r.ok ? t('Моделей: {n}', { n: r.count ?? 0 }) : (r.error ?? t('Не удалось обновить')))
     },
     deleteProvider: (id) => void cmd('deleteProvider', { id }),
     setModelLite: (id, model, lite) => void cmd('setModelLite', { id, model, lite }),

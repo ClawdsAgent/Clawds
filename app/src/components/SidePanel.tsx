@@ -7,6 +7,7 @@ import MessageView from './MessageView'
 import Composer from './Composer'
 import { EffortSelect, ModelSelect } from './ModelPick'
 import { modelName } from '../models'
+import { t } from '../i18n'
 
 function Tree({ nodes, depth = 0 }: { nodes: FileNode[]; depth?: number }) {
   return (
@@ -46,35 +47,35 @@ function BotPanel({ id }: { id: string }) {
 
   return (
     <>
-      <Head title={bot.name} sub={`${modelName(bot.model)} · запусков сегодня: ${bot.runsToday}`} />
+      <Head title={bot.name} sub={`${modelName(bot.model)} · ${t('запусков сегодня:')} ${bot.runsToday}`} />
       <div className="panel-body">
         <div className="bot-hero">
           <Avatar id={bot.id} size={56} />
           <p>{bot.role}</p>
         </div>
         <div className="row-set">
-          <label>Модель</label>
+          <label>{t('Модель')}</label>
           <ModelSelect value={bot.model} onChange={(v) => updateBot(bot.id, { model: v })} />
         </div>
         <div className="row-set">
-          <label>Размышления</label>
+          <label>{t('Размышления')}</label>
           <EffortSelect value={bot.effort} model={bot.model} onChange={(v) => updateBot(bot.id, { effort: v })} />
         </div>
         <div className="row-set">
-          <label>Главный<span className="sub"> может менять размышления других ботов</span></label>
+          <label>{t('Главный')}<span className="sub"> {t('может менять размышления других ботов')}</span></label>
           <input type="checkbox" checked={bot.boss} onChange={(e) => updateBot(bot.id, { boss: e.target.checked })} />
         </div>
         <div className="row-set">
-          <label>Спит (не расходует лимит)</label>
+          <label>{t('Спит (не расходует лимит)')}</label>
           <input type="checkbox" checked={bot.sleeping} onChange={(e) => updateBot(bot.id, { sleeping: e.target.checked })} />
         </div>
         <div className="tabs">
-          {([['claude', 'CLAUDE.md'], ['memory', 'Память'], ['todo', 'todo.md'], ['schedule', 'Расписание']] as const).map(([k, l]) => (
+          {([['claude', 'CLAUDE.md'], ['memory', t('Память')], ['todo', 'todo.md'], ['schedule', t('Расписание')]] as const).map(([k, l]) => (
             <button key={k} className={tab === k ? 'sel' : ''} onClick={() => setTab(k)}>{l}</button>
           ))}
         </div>
         {tab !== 'schedule' ? (
-          <textarea className="editor" value={bot[field]} onChange={(e) => updateBot(bot.id, { [field]: e.target.value })} placeholder="Пусто" />
+          <textarea className="editor" value={bot[field]} onChange={(e) => updateBot(bot.id, { [field]: e.target.value })} placeholder={t('Пусто')} />
         ) : (
           <div>
             {bot.schedule.map((s) => (
@@ -84,10 +85,10 @@ function BotPanel({ id }: { id: string }) {
                 <button className="icon-btn" onClick={() => updateBot(bot.id, { schedule: bot.schedule.filter((x) => x.id !== s.id) })}><Trash2 size={15} /></button>
               </div>
             ))}
-            {bot.schedule.length === 0 && <div className="sub">Расписания нет</div>}
+            {bot.schedule.length === 0 && <div className="sub">{t('Расписания нет')}</div>}
             <div className="sched-add">
-              <input placeholder="cron, например 0 9 * * *" value={cron} onChange={(e) => setCron(e.target.value)} />
-              <input placeholder="Что сделать" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+              <input placeholder={t('cron, например 0 9 * * *')} value={cron} onChange={(e) => setCron(e.target.value)} />
+              <input placeholder={t('Что сделать')} value={prompt} onChange={(e) => setPrompt(e.target.value)} />
               <button
                 className="btn"
                 disabled={!cron.trim() || !prompt.trim()}
@@ -96,7 +97,7 @@ function BotPanel({ id }: { id: string }) {
                   setCron(''); setPrompt('')
                 }}
               >
-                <Plus size={14} /> Добавить
+                <Plus size={14} /> {t('Добавить')}
               </button>
             </div>
           </div>
@@ -116,44 +117,44 @@ function WorkspacePanel() {
   useEffect(() => setName(session?.name ?? ''), [session?.id, session?.name])
   return (
     <>
-      <Head title="Воркспейс" sub={workspace.path} />
+      <Head title={t('Воркспейс')} sub={workspace.path} />
       <div className="panel-body">
         <div className="card sess">
-          <div className="sub">Сессия</div>
+          <div className="sub">{t('Сессия')}</div>
           <div className="sess-name">
             <input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== session?.name && renameSession(name)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
           </div>
           <div className="sub">{workspace.path}</div>
           <div className="sess-actions">
-            <button className="btn primary" onClick={newSession}><Plus size={15} /> Новая сессия</button>
-            <button className="btn" onClick={closeSession}>Сменить папку или сессию</button>
+            <button className="btn primary" onClick={newSession}><Plus size={15} /> {t('Новая сессия')}</button>
+            <button className="btn" onClick={closeSession}>{t('Сменить папку или сессию')}</button>
           </div>
           <details className="opts" onToggle={(e) => !(e.target as HTMLDetailsElement).open && setConfirmReset(false)}>
-            <summary>Опции</summary>
+            <summary>{t('Опции')}</summary>
             <div className="opts-body">
-              <p>Сброс удаляет ботов, группы, переписку и память этой сессии. Файлы папки и ветки в git остаются.</p>
+              <p>{t('Сброс удаляет ботов, группы, переписку и память этой сессии. Файлы папки и ветки в git остаются.')}</p>
               {!confirmReset ? (
-                <button className="btn danger" onClick={() => setConfirmReset(true)}>Сбросить сессию</button>
+                <button className="btn danger" onClick={() => setConfirmReset(true)}>{t('Сбросить сессию')}</button>
               ) : (
                 <div className="row-btns">
-                  <button className="btn danger" onClick={() => { setConfirmReset(false); resetSession() }}>Да, сбросить</button>
-                  <button className="btn" onClick={() => setConfirmReset(false)}>Отмена</button>
+                  <button className="btn danger" onClick={() => { setConfirmReset(false); resetSession() }}>{t('Да, сбросить')}</button>
+                  <button className="btn" onClick={() => setConfirmReset(false)}>{t('Отмена')}</button>
                 </div>
               )}
             </div>
           </details>
         </div>
-        <div className="card"><b>GitHub</b><div className="sub">{workspace.remote || 'remote origin не задан'}</div><div className="sub">{workspace.dirty ? `Незакоммиченных изменений: ${workspace.dirty}` : 'Всё закоммичено'}</div></div>
-        <div className="sched-add"><input placeholder="https://github.com/вы/репозиторий.git" value={remote} onChange={(e) => setRemoteText(e.target.value)} /><button className="btn" disabled={!remote.trim()} onClick={() => { setRemote(remote); setRemoteText('') }}>Задать remote origin</button></div>
-        <h4>Папки проекта</h4>
+        <div className="card"><b>GitHub</b><div className="sub">{workspace.remote || t('remote origin не задан')}</div><div className="sub">{workspace.dirty ? t('Незакоммиченных изменений: {n}', { n: workspace.dirty }) : t('Всё закоммичено')}</div></div>
+        <div className="sched-add"><input placeholder={t('https://github.com/вы/репозиторий.git')} value={remote} onChange={(e) => setRemoteText(e.target.value)} /><button className="btn" disabled={!remote.trim()} onClick={() => { setRemote(remote); setRemoteText('') }}>{t('Задать remote origin')}</button></div>
+        <h4>{t('Папки проекта')}</h4>
         {workspace.folders.map((f) => <div className="tree-row" key={f}><Folder size={14} /> {f}</div>)}
         <div className="sched-add">
-          <input placeholder="Путь к папке" value={folder} onChange={(e) => setFolder(e.target.value)} />
-          <button className="btn" disabled={!folder.trim()} onClick={() => { addFolder(folder); setFolder('') }}><Plus size={14} /> Добавить</button>
+          <input placeholder={t('Путь к папке')} value={folder} onChange={(e) => setFolder(e.target.value)} />
+          <button className="btn" disabled={!folder.trim()} onClick={() => { addFolder(folder); setFolder('') }}><Plus size={14} /> {t('Добавить')}</button>
         </div>
-        <h4>Ветки</h4>
+        <h4>{t('Ветки')}</h4>
         {workspace.branches.map((b) => <div className="tree-row" key={b}><GitBranch size={14} /> {b}</div>)}
-        <h4>Коммиты</h4>
+        <h4>{t('Коммиты')}</h4>
         {workspace.commits.map((c) => (
           <div className="commit" key={c.hash}>
             <GitCommit size={14} />
@@ -161,7 +162,7 @@ function WorkspacePanel() {
             <code>{c.hash}</code>
           </div>
         ))}
-        <h4>Файлы</h4>
+        <h4>{t('Файлы')}</h4>
         <Tree nodes={workspace.tree} />
       </div>
     </>
@@ -174,14 +175,14 @@ function MembersPanel() {
   const outside = bots.filter((b) => !ch.members.includes(b.id))
   return (
     <>
-      <Head title="Участники" sub={`#${ch.name}`} />
+      <Head title={t('Участники')} sub={`#${ch.name}`} />
       <div className="panel-body">
-        <div className="member"><UserAvatar id="me" size={28} /> Вы</div>
+        <div className="member"><UserAvatar id="me" size={28} /> {t('Вы')}</div>
         {ch.members.filter((m) => m !== 'me').map((m) => {
           const b = bots.find((x) => x.id === m)!
           return <button className="member click" key={m} onClick={() => openDm(m)}><UserAvatar id={m} size={28} /> {b.name}</button>
         })}
-        {outside.length > 0 && <h4>Добавить в группу</h4>}
+        {outside.length > 0 && <h4>{t('Добавить в группу')}</h4>}
         {outside.map((b) => (
           <button className="member click" key={b.id} onClick={() => addMembers(ch.id, [b.id])}>
             <Avatar id={b.id} size={28} /> {b.name} <UserPlus size={14} className="right" />
@@ -199,13 +200,13 @@ function ThreadPanel({ id }: { id: string }) {
   const replies = messages.filter((m) => m.threadOf === id)
   return (
     <>
-      <Head title="Тред" />
+      <Head title={t('Тред')} />
       <div className="panel-body thread">
         <MessageView msg={root} inThread />
-        {replies.length === 0 ? <div className="t-empty"><Avatar id={root.authorId} size={64} /><b>Ответов пока нет</b><span>Напишите первым, ответ уйдёт в этот тред</span></div> : <div className="sep">{replies.length} ответов</div>}
+        {replies.length === 0 ? <div className="t-empty"><Avatar id={root.authorId} size={64} /><b>{t('Ответов пока нет')}</b><span>{t('Напишите первым, ответ уйдёт в этот тред')}</span></div> : <div className="sep">{t('{n} ответов', { n: replies.length })}</div>}
         {replies.map((m) => <MessageView key={m.id} msg={m} inThread />)}
       </div>
-      <Composer channelId={root.channelId} threadOf={root.id} placeholder="Ответить в треде" />
+      <Composer channelId={root.channelId} threadOf={root.id} placeholder={t('Ответить в треде')} />
     </>
   )
 }
