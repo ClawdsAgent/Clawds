@@ -1,0 +1,47 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead? Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a folder
+        2. Create a bot ...
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Clawds version
+      description: The release you downloaded, or the commit if you run from source.
+      placeholder: 0.1.0
+  - type: dropdown
+    id: model
+    attributes:
+      label: Which models were the bots using?
+      options:
+        - Claude subscription (Claude Code)
+        - Custom endpoint (OpenRouter, LiteLLM, ...)
+        - Local model (LM Studio, Ollama)
+        - Not related to models
+  - type: input
+    id: env
+    attributes:
+      label: System
+      description: OS version, Node.js version (`node -v`), Claude Code version (`claude --version`).
+      placeholder: Windows 11, Node 22, Claude Code 2.1.x
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output of the server window (remove anything private, keys especially).
+      render: shell

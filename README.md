@@ -22,7 +22,7 @@ Telegram-style chats, groups and threads. Every bot is a real Claude Code with i
 
 <br>
 
-<img src="docs/img/chat.jpg" alt="A group chat where a lead, a developer and a tester bot split a task" width="860">
+<img src="docs/img/demo.gif" alt="A lead, a developer and a tester bot split a task in a group chat" width="860">
 
 </div>
 
@@ -104,6 +104,10 @@ Build the portable release yourself with `npm run release` (creates `release/Cla
 ## Status
 
 An early, working prototype built for personal use on Windows. Tested with real Claude Code runs on one machine. Linux and macOS are untested (the scripts and process handling are Windows-oriented). Issues and pull requests are welcome.
+
+## Contributing
+
+Issues, ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run it (you do not need a Claude account, there is a scripted fake) and where to start. Report security problems privately, see [SECURITY.md](SECURITY.md).
 
 ## License
 

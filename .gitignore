@@ -31,3 +31,6 @@ providers.json
 
 # сборка релиза
 /release/
+
+# черновики постов (не для публикации в репозитории)
+/docs/launch-posts.md
