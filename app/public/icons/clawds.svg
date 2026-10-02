@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">
+  <!-- Dots from docs/img/logo.svg, centered within the maskable safe zone.
+       Background: sRGB equivalent of the bg CSS variable (oklch(0.165 0.008 75)) in src/index.css. -->
+  <rect width="256" height="256" fill="#100e0b"/>
+  <circle cx="90" cy="128" r="14" fill="#b6e354"/>
+  <circle cx="128" cy="128" r="14" fill="#e9a35f"/>
+  <circle cx="166" cy="128" r="14" fill="#6fd0d6"/>
+</svg>
