@@ -1,0 +1,12 @@
+/* один сворачиваемый блок на все инструменты сообщения */
+.tgroup { margin: 4px 0 6px; border-radius: 12px; background: oklch(0 0 0 / .25); border-left: 3px solid var(--muted); overflow: hidden; min-width: 0; max-width: 100%; animation: rise .4s var(--spring); }
+.tg-head { display: flex; align-items: center; gap: 7px; width: 100%; padding: 7px 10px; text-align: left; font-size: 12.5px; min-width: 0; transition: background .2s; }
+.tg-head:hover { background: oklch(1 0 0 / .05); }
+.tg-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tg-title code { color: var(--muted); }
+.tgroup > .tool-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s var(--smooth); }
+.tgroup.open > .tool-fold { grid-template-rows: 1fr; }
+.tgroup.open > .tg-head .chev { transform: rotate(90deg); }
+.tg-body { min-height: 0; overflow: hidden; }
+.tgroup .tool { margin: 0; border-radius: 0; background: transparent; border-left: 0; border-top: 1px solid var(--line); animation: none; min-width: 0; }
+.tool[data-kind='clawds'] .tool-head b { color: var(--accent); }

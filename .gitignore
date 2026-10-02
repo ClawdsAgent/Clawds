@@ -1,0 +1,30 @@
+# зависимости и сборка
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# рабочие данные Clawds: проекты ботов, сессии, переписка, вход в Claude
+/workspace/
+/server-data/
+/server/claude-config/
+.clawds/
+
+# временные папки проверок
+/tmp-*/
+tmp_patch.mjs
+
+# логи и мусор
+*.log
+server/latest
+server/sessions.json
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# секреты (ключи эндпоинтов)
+providers.json
+.env
+.env.*
