@@ -1,0 +1,40 @@
+/* стартовый экран: папка и недавние сессии */
+.launcher { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: radial-gradient(900px 500px at 50% -10%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 60%), var(--bg); overflow-y: auto; }
+.launch-card { width: min(620px, 100%); animation: rise .6s var(--spring); }
+.brand { display: flex; align-items: center; gap: 14px; } .brand h1 { margin: 0; font-size: 34px; letter-spacing: -.02em; }
+.brand .dots.big { margin: 0; }
+.lead-text { color: var(--muted); margin: 10px 0 22px; font-size: 15px; }
+.path-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: 24px; padding: 6px 6px 6px 16px; transition: box-shadow .25s; }
+.path-row:focus-within { box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 45%, transparent); }
+.path-row input { border: 0; background: none; box-shadow: none !important; padding: 10px 0; }
+.hint-line { display: flex; gap: 6px; align-items: center; margin: 10px 6px 0; }
+.recent h3, .found h3 { margin: 28px 0 10px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.found h3 { margin: 16px 0 2px; font-size: 20px; text-transform: none; letter-spacing: 0; color: var(--text); }
+.rs-row { display: flex; align-items: center; gap: 4px; border-radius: 18px; background: var(--surface); margin-bottom: 8px; transition: background .2s, transform .3s var(--spring); animation: rise .45s var(--spring) backwards; }
+.rs-row:hover { background: var(--surface2); transform: translateY(-2px); } .rs-row.gone { opacity: .5; }
+.rs-main { flex: 1; display: flex; gap: 14px; align-items: center; text-align: left; padding: 12px 8px 12px 14px; min-width: 0; }
+.rs-main .grow { display: flex; flex-direction: column; } .rs-main b { font-weight: 600; font-size: 15px; }
+.rs-path { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.rs-ico { width: 40px; height: 40px; border-radius: 13px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; flex-shrink: 0; }
+.rs-row .icon-btn { margin-right: 10px; }
+.wide-btn { width: 100%; margin-top: 8px; padding: 12px; }
+.back { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); padding: 4px 0; } .back:hover { color: var(--text); }
+
+/* сессия в панели воркспейса */
+.sess .sess-name input { font-weight: 600; font-size: 15px; background: transparent; border-color: transparent; padding: 4px 6px; margin: -4px -6px 2px; width: calc(100% + 12px); }
+.sess .sess-name input:hover { border-color: var(--line); }
+.sess-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.opts { margin-top: 12px; } .opts summary { cursor: pointer; color: var(--muted); font-size: 12.5px; padding: 4px 0; list-style: none; }
+.opts summary::-webkit-details-marker { display: none; } .opts summary:hover, .opts[open] summary { color: var(--text); }
+.opts-body { margin-top: 8px; padding: 12px; background: var(--bg); border-radius: 14px; animation: rise .35s var(--spring); }
+.opts-body p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+.row-btns { display: flex; gap: 8px; }
+
+/* пустая сессия */
+.empty-card { text-align: center; max-width: 360px; padding: 28px; animation: rise .5s var(--spring); }
+.empty-card h2 { margin: 14px 0 6px; font-size: 20px; color: var(--text); } .empty-card p { margin: 0 0 18px; color: var(--muted); }
+.empty-card .row-btns { justify-content: center; flex-wrap: wrap; }
+.side-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 28px 18px; }
+
+.gen-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
