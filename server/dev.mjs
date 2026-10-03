@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
-const FILES = ['core.mjs', 'index.mjs', 'lib/runner.mjs', 'lib/git.mjs', 'lib/rules.mjs']
+const FILES = ['core.mjs', 'index.mjs', 'lib/runner.mjs', 'lib/git.mjs', 'lib/rules.mjs', 'lib/tools.mjs', 'lib/chatimport.mjs', 'lib/providers.mjs', 'lib/locale.mjs']
 
 let child = null
 let restarting = false

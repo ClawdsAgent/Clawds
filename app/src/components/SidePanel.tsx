@@ -38,8 +38,9 @@ function Head({ title, sub }: { title: string; sub?: string }) {
 }
 
 function BotPanel({ id }: { id: string }) {
-  const { bots, updateBot } = useStore()
+  const { bots, updateBot, tools, setModal } = useStore()
   const bot = bots.find((b) => b.id === id)!
+  const toggle = (field: 'mcp' | 'skills', key: string, on: boolean) => { const cur = bot[field] ?? []; updateBot(bot.id, { [field]: on ? [...cur, key] : cur.filter((x) => x !== key) }) }
   const [tab, setTab] = useState<'claude' | 'memory' | 'todo' | 'schedule'>('claude')
   const [cron, setCron] = useState('')
   const [prompt, setPrompt] = useState('')
@@ -68,6 +69,25 @@ function BotPanel({ id }: { id: string }) {
         <div className="row-set">
           <label>{t('Спит (не расходует лимит)')}</label>
           <input type="checkbox" checked={bot.sleeping} onChange={(e) => updateBot(bot.id, { sleeping: e.target.checked })} />
+        </div>
+        <div className="bot-tools">
+          <b>{t('Инструменты и навыки')}</b>
+          {tools.mcp.length === 0 && tools.skills.length === 0 && <div className="sub">{t('Пока нечего включать.')}</div>}
+          {tools.mcp.length > 0 && <h4>{t('MCP-серверы')}</h4>}
+          {tools.mcp.map((m) => (
+            <label className="check" key={m.id}>
+              <input type="checkbox" checked={m.allBots || (bot.mcp ?? []).includes(m.id)} disabled={m.allBots} onChange={(e) => toggle('mcp', m.id, e.target.checked)} />
+              <span>{m.name}{m.allBots && <span className="sub"> {t('включён всем')}</span>}</span>
+            </label>
+          ))}
+          {tools.skills.length > 0 && <h4>{t('Навыки')}</h4>}
+          {tools.skills.map((k) => (
+            <label className="check" key={k.name} title={k.description}>
+              <input type="checkbox" checked={(bot.skills ?? []).includes(k.name)} onChange={(e) => toggle('skills', k.name, e.target.checked)} />
+              <span>{k.name}<span className="sub tl-desc">{k.description}</span></span>
+            </label>
+          ))}
+          <button className="btn small" style={{ marginTop: 8 }} onClick={() => setModal('tools')}>{t('Управлять серверами и навыками')}</button>
         </div>
         <div className="tabs">
           {([['claude', 'CLAUDE.md'], ['memory', t('Память')], ['todo', 'todo.md'], ['schedule', t('Расписание')]] as const).map(([k, l]) => (
