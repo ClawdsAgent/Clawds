@@ -1,11 +1,12 @@
 import { create } from 'zustand'
-import type { Account, Attachment, Bot, Channel, Conn, Message, Quota, RecentSession, Session, Settings, Workspace } from './types'
+import type { Account, Attachment, Bot, Channel, Conn, McpServer, SkillInfo, Message, Quota, RecentSession, Session, Settings, Workspace } from './types'
 import { setProviderRegistry } from './models'
 import { t, getLang, setLangValue, type Lang } from './i18n'
 import { call } from './live'
 
+export type FileView = { name: string; path: string; size: number; text: string; line: number; truncated: boolean }
 export type Panel = { kind: 'none' } | { kind: 'bot'; id: string } | { kind: 'workspace' } | { kind: 'members' } | { kind: 'thread'; id: string }
-export type Modal = null | 'createBot' | 'createGroup' | 'settings' | 'search' | 'profile' | 'accounts' | 'account' | 'connections'
+export type Modal = null | 'createBot' | 'createGroup' | 'settings' | 'search' | 'profile' | 'accounts' | 'account' | 'connections' | 'tools'
 
 const emptyWorkspace: Workspace = { path: '', remote: '', branches: [], commits: [], tree: [], folders: [], dirty: 0 }
 const emptyQuota: Quota = { known: false, fiveHour: { pct: 0, resetsAt: 0 }, sevenDay: { pct: 0, resetsAt: 0 } }
@@ -31,6 +32,8 @@ type State = {
   recent: RecentSession[]
   session: Session | null
   conn: Conn
+  fileView: FileView | null
+  tools: { mcp: McpServer[]; skills: SkillInfo[] }
   lang: Lang
   // только интерфейс
   live: boolean
@@ -45,7 +48,10 @@ type State = {
   lastRead: Record<string, number>
 
   setLive: (v: boolean) => void
+  openFileRef: (msgId: string, ref: string) => Promise<void>
+  closeFile: () => void
   setLang: (l: Lang) => void
+  rpc: <T = any>(name: string, args?: Record<string, unknown>) => Promise<T | undefined>
   apply: (ev: any) => void
   setActive: (id: string) => void
   setPanel: (p: Panel) => void
@@ -121,7 +127,7 @@ export const useStore = create<State>((set, get) => {
 
   return {
     bots: [], channels: [], messages: [], accounts: {}, workspace: emptyWorkspace, quota: emptyQuota, settings: emptySettings,
-    typing: {}, running: 0, muted: [], recent: [], session: null, conn: { loggedIn: true, pending: false, providers: [] }, lang: getLang(),
+    typing: {}, running: 0, muted: [], recent: [], session: null, conn: { loggedIn: true, pending: false, providers: [] }, lang: getLang(), tools: { mcp: [], skills: [] }, fileView: null,
     live: false, ready: false, active: '', panel: { kind: 'none' }, modal: null, profileId: null, lightbox: null, toast: null,
     mobileChat: false, lastRead: loadLastRead(),
 
@@ -129,6 +135,15 @@ export const useStore = create<State>((set, get) => {
       set(live ? { live } : { live, ready: false })
       if (live) void cmd('setLang', { lang: get().lang }) // серверные сообщения и боты говорят на языке интерфейса
     },
+    rpc: (name, args = {}) => cmd(name, args),
+    // Клик по пути к файлу в сообщении: текст открываем в окне просмотра, картинки и бинарные файлы во вложении
+    openFileRef: async (msgId, ref) => {
+      const r = await cmd<{ kind: string; name: string; path: string; size: number; line?: number; truncated?: boolean; text?: string; attachment?: Attachment }>('openFile', { msgId, ref })
+      if (!r) return
+      if (r.kind === 'text' && r.text !== undefined) set({ fileView: { name: r.name, path: r.path, size: r.size, text: r.text, line: r.line ?? 0, truncated: !!r.truncated } })
+      else if (r.attachment) set({ lightbox: r.attachment })
+    },
+    closeFile: () => set({ fileView: null }),
     setLang: (lang) => {
       setLangValue(lang)
       set({ lang })
@@ -137,6 +152,7 @@ export const useStore = create<State>((set, get) => {
 
     apply: (ev) => {
       switch (ev.t) {
+        case 'tools': set({ tools: { mcp: ev.mcp, skills: ev.skills } }); break
         case 'conn': setProviderRegistry(ev.providers); set({ conn: { loggedIn: ev.loggedIn, pending: ev.pending, providers: ev.providers } }); break
         case 'recent': set({ recent: ev.recent, ready: true }); break
         case 'closed':

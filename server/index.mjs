@@ -5,7 +5,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs'
 import { join, extname, normalize, sep } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { tr } from './lib/locale.mjs'
-import { init, snapshot, launcherInfo, connInfo, isOpen, GLOBAL_COMMANDS, onEvent, commands, agentCall, tickSchedules, ROOT, UPLOADS, PORT } from './core.mjs'
+import { init, snapshot, launcherInfo, connInfo, toolsInfo, isOpen, GLOBAL_COMMANDS, onEvent, commands, agentCall, tickSchedules, ROOT, UPLOADS, PORT } from './core.mjs'
 
 // Порт с ботами в режиме bypassPermissions = выполнение кода, поэтому только 127.0.0.1
 // и только страницы с этих адресов (иначе любой сайт мог бы управлять ботами).
@@ -59,6 +59,7 @@ wss.on('connection', (ws) => {
   const off = onEvent((ev, except) => { if (except !== clientId) send(ev) })
   send(launcherInfo())
   send(connInfo())
+  send(toolsInfo())
   send(isOpen() ? { t: 'snapshot', state: snapshot() } : { t: 'closed' })
   ws.on('close', off)
   ws.on('message', async (raw) => {
