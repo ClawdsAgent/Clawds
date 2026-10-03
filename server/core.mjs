@@ -56,6 +56,8 @@ const validModel = (m) => MODELS.includes(m) || !!resolveModel(m)
 const claudeLoggedIn = () => {
   try { return !!JSON.parse(readFileSync(join(CONFIG_DIR, '.credentials.json'), 'utf8')).claudeAiOauth?.accessToken } catch { return false }
 }
+// Отпечаток файла входа: вход считается завершённым, только когда файл изменился (старый вход не в счёт)
+const credStamp = () => { try { const st = statSync(join(CONFIG_DIR, '.credentials.json')); return st.mtimeMs + ':' + st.size } catch { return '' } }
 let loginWatch = null
 export const connInfo = () => ({ t: 'conn', loggedIn: claudeLoggedIn(), pending: !!loginWatch, providers: PROV.view() })
 const emitConn = () => emit(connInfo())
@@ -845,10 +847,18 @@ export const commands = {
   claudeLogin: async () => {
     if (loginWatch) return {}
     const cmdFile = join(ROOT, 'server', 'login.cmd')
-    spawn('cmd.exe', ['/c', 'start', '""', '"' + cmdFile + '"'], { detached: true, stdio: 'ignore', windowsVerbatimArguments: true, windowsHide: false }).unref()
+    const before = credStamp()
+    const wasIn = claudeLoggedIn()
+    // «fresh»: выйти из старого входа перед новым, чтобы новый вход не путался со старым
+    spawn('cmd.exe', ['/c', 'start', '""', '"' + cmdFile + '"', wasIn ? 'fresh' : ''], { detached: true, stdio: 'ignore', windowsVerbatimArguments: true, windowsHide: false }).unref()
     let n = 0
     loginWatch = setInterval(() => {
-      if (claudeLoggedIn() || ++n > 90) { clearInterval(loginWatch); loginWatch = null; if (claudeLoggedIn()) emit({ t: 'toast', text: 'Вход в Claude выполнен' }); emitConn() }
+      const done = credStamp() !== before && claudeLoggedIn()
+      if (done || ++n > 90) {
+        clearInterval(loginWatch); loginWatch = null
+        emit({ t: 'toast', text: done ? tr('Вход в Claude выполнен') : tr('Вход не завершён') })
+        emitConn()
+      }
     }, 2000)
     emitConn()
     return {}
