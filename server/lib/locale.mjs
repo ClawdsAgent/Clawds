@@ -74,6 +74,7 @@ const EN = {
   'Неизвестная команда {n}': 'Unknown command {n}',
   'Сначала откройте папку или сессию': 'Open a folder or a session first',
   'Вход в Claude выполнен': 'Signed in to Claude',
+  'Вход не завершён': 'Sign-in was not completed',
   'Нужен адрес эндпоинта': 'Endpoint address is required',
   'Адрес выглядит неверно': 'The address looks invalid',
   'Список моделей не получен: {e}. Модели можно добавить вручную по ID.': 'Model list not received: {e}. You can add models manually by ID.',
