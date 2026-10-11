@@ -27,8 +27,16 @@ function stop(cb) {
   if (!child) return cb()
   const mine = child
   mine.once('exit', () => cb())
-  // дерево процессов целиком: вместе с сервером останавливаются его запуски claude
-  spawn('taskkill', ['/F', '/T', '/PID', String(mine.pid)], { windowsHide: true })
+  if (process.platform === 'win32') {
+    // дерево процессов целиком: вместе с сервером останавливаются его запуски claude
+    spawn('taskkill', ['/F', '/T', '/PID', String(mine.pid)], { windowsHide: true })
+    return
+  }
+  // POSIX: taskkill нет — гасим по PID: сначала мягко SIGTERM, затем SIGKILL.
+  // Ребёнок запущен в той же группе процессов, поэтому групповой kill
+  // по отрицательному PID (как в runner.mjs) задел бы и сам супервизор.
+  try { mine.kill('SIGTERM') } catch { /* уже завершён */ }
+  setTimeout(() => { if (child === mine) try { mine.kill('SIGKILL') } catch {} }, 3000).unref()
 }
 
 function restart(why) {
