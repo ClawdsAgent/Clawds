@@ -8,6 +8,14 @@ import { tr } from './locale.mjs'
 
 const HOME = homedir()
 const APPDATA = process.env.APPDATA || join(HOME, 'AppData', 'Roaming')
+// Каталог конфигов приложений: Windows — %APPDATA%, macOS — ~/Library/Application Support,
+// Linux — $XDG_CONFIG_HOME или ~/.config (а не несуществующий ~/AppData/Roaming).
+const appConfigDir = () =>
+  process.platform === 'win32'
+    ? APPDATA
+    : process.platform === 'darwin'
+      ? join(HOME, 'Library', 'Application Support')
+      : process.env.XDG_CONFIG_HOME || join(HOME, '.config')
 export const RESERVED = ['clawds']
 const slug = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32)
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8').replace(/^﻿/, '')) } catch { return null } }
@@ -180,13 +188,14 @@ export function testServer(s) {
 
 // Где другие агенты хранят MCP-серверы (папка проекта добавляет .mcp.json)
 export function mcpSources(projectDir) {
+  const cfg = appConfigDir()
   const list = [
-    ['Claude Desktop', join(APPDATA, 'Claude', 'claude_desktop_config.json')],
+    ['Claude Desktop', join(cfg, 'Claude', 'claude_desktop_config.json')],
     ['Claude Code', join(HOME, '.claude.json')],
     ['Cursor', join(HOME, '.cursor', 'mcp.json')],
     ['Windsurf', join(HOME, '.codeium', 'windsurf', 'mcp_config.json')],
-    ['VS Code', join(APPDATA, 'Code', 'User', 'mcp.json')],
-    ['Cline', join(APPDATA, 'Code', 'User', 'globalStorage', 'saoudrizwan.claude-dev', 'settings', 'cline_mcp_settings.json')],
+    ['VS Code', join(cfg, 'Code', 'User', 'mcp.json')],
+    ['Cline', join(cfg, 'Code', 'User', 'globalStorage', 'saoudrizwan.claude-dev', 'settings', 'cline_mcp_settings.json')],
     ['Gemini CLI', join(HOME, '.gemini', 'settings.json')],
     ['Codex CLI', join(HOME, '.codex', 'config.toml')],
   ]
