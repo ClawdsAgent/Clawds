@@ -634,7 +634,8 @@ async function doRun(b, ch, job) {
     msg.text = msg.text.replace(/\[(?:файл|attach)\s*:\s*[^\]\n]+\]/gi, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
     if (attachments.length) msg.attachments = [...(msg.attachments ?? []), ...attachments]
     if (bad.length) msg.text += (msg.text ? '\n\n' : '') + tr('Не удалось приложить: {l}', { l: bad.join(', ') })
-    emit({ t: 'text', id: msg.id, delta: '', full: msg.text })
+    // put, а не text+full: клиент помечает любое событие full как ошибку, а здесь ошибки нет
+    putMsg(msg)
     final = msg.text
   }
   // «Право на молчание»: ответ [молчу] не показываем в чате (карточки инструментов остаются, если были)
