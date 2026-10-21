@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronRight, Loader2, Check, MessageSquare, Pin, Wrench, FileText, Download } from 'lucide-react'
+import { ChevronRight, Loader2, Check, MessageSquare, Pin, Wrench, FileText, Download, Image, Sparkles } from 'lucide-react'
 import { useStore } from '../store'
 import type { Attachment, Message, ToolCall } from '../types'
 import Markdown from './Markdown'
@@ -76,7 +76,7 @@ function Attachments({ list }: { list: Attachment[] }) {
 export default function MessageView({
   msg, inThread, pos = { first: true, last: true }, showName = true,
 }: { msg: Message; inThread?: boolean; pos?: { first: boolean; last: boolean }; showName?: boolean }) {
-  const { bots, react, pin, setPanel, messages, openProfile, accounts } = useStore()
+  const { bots, react, pin, setPanel, messages, openProfile, accounts, tools, openFileRef, setModal } = useStore()
   const replies = messages.filter((m) => m.threadOf === msg.id).length
   const names = bots.map((b) => b.name)
   const bot = bots.find((b) => b.id === msg.authorId)
@@ -87,7 +87,22 @@ export default function MessageView({
   const accountIdByHandle = (h: string) => (names.includes(h) ? h : Object.values(accounts).find((a) => a.username === h)?.id)
   // Токены внутри Markdown: упоминания (@бот, [high]@бот, [low]@бот) и /all
   const mention = (p: string, key: string) => {
+    // `путь/к/файлу.ts:42` в обратных кавычках: если файл существует, он кликабелен
+    if (p.startsWith('`')) {
+      const ref = p.slice(1, -1).trim()
+      const info = msg.refs?.[ref]
+      if (!info) return null
+      return (
+        <button key={key} className="file-ref" title={t('Открыть файл')} onClick={(e) => { e.stopPropagation(); void openFileRef(msg.id, ref) }}>
+          {info.kind === 'image' ? <Image size={13} /> : <FileText size={13} />}<code>{ref}</code>
+        </button>
+      )
+    }
     if (p === '/all') return <span key={key} className="mention all">/all</span>
+    if (p.startsWith('/')) {
+      // /имя-навыка: подсвечиваем только настоящие навыки
+      return tools.skills.some((s) => s.name === p.slice(1)) ? <button key={key} className="mention skill" title={t('Навык')} onClick={(e) => { e.stopPropagation(); setModal('tools') }}><Sparkles size={12} />{p}</button> : null
+    }
     const mm = p.match(/^(?:\[(high|low)\]\s*)?@(\w+)$/)
     if (!mm) return null
     const id = accountIdByHandle(mm[2])

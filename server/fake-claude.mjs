@@ -6,6 +6,7 @@ let prompt = ''
 process.stdin.on('data', (d) => (prompt += d))
 process.stdin.on('end', async () => {
   if (process.env.FAKE_LOG) appendFileSync(process.env.FAKE_LOG, 'PROMPT_LANG=' + (/LANGUAGE: write every chat message/.test(prompt) ? 'en' : /ЯЗЫК: пиши/.test(prompt) ? 'ru' : '?') + '\n')
+  if (process.env.FAKE_LOG && /ПРОСЯТ ПРИМЕНИТЬ НАВЫК/.test(prompt)) appendFileSync(process.env.FAKE_LOG, 'PROMPT_SKILL=' + /ПРОСЯТ ПРИМЕНИТЬ НАВЫК \/([\w-]+)/.exec(prompt)?.[1] + '\n')
   const out = (o) => console.log(JSON.stringify(o))
   const w = (ms) => new Promise((r) => setTimeout(r, ms))
   const found = [...prompt.matchAll(/FAKE_SAY=(.*)/g)]

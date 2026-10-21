@@ -34,3 +34,4 @@ providers.json
 
 # черновики постов (не для публикации в репозитории)
 /docs/launch-posts.md
+/docs/habr-article.md

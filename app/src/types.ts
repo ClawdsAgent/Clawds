@@ -13,6 +13,8 @@ export type Bot = {
   runsToday: number
   costToday?: number
   sleeping: boolean
+  mcp: string[] // включённые сторонние MCP-серверы
+  skills: string[] // включённые навыки
 }
 
 export type ToolCall = {
@@ -25,7 +27,10 @@ export type ToolCall = {
 
 export type Attachment = { id: string; name: string; size: number; mime: string; url: string; path?: string }
 
+export type FileRef = { kind: 'text' | 'image' | 'binary'; size: number }
+
 export type Message = {
+  refs?: Record<string, FileRef> // пути из `кавычек`, которые указывают на существующие файлы
   id: string
   channelId: string
   authorId: string // 'me', id бота или 'system'
@@ -114,3 +119,7 @@ export type Provider = {
   keyTail: string; hasKey: boolean; fetchedAt: number; error: string; models: ProviderModel[]
 }
 export type Conn = { loggedIn: boolean; pending: boolean; providers: Provider[] }
+
+// Сторонние MCP-серверы и навыки (значения ключей с сервера не приходят)
+export type McpServer = { id: string; name: string; type: 'stdio' | 'http' | 'sse'; command: string; args: string[]; url: string; envKeys: string[]; headerKeys: string[]; source: string; allBots: boolean }
+export type SkillInfo = { name: string; description: string; size: number; builtin: boolean; source: string }

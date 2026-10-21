@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import ChatView from './components/ChatView'
 import SidePanel from './components/SidePanel'
-import Modals, { Lightbox } from './components/Modals'
+import Modals, { Lightbox, FileViewer } from './components/Modals'
 import Launcher from './components/Launcher'
 import { Toast } from './components/ui'
 import { useStore } from './store'
@@ -35,6 +35,7 @@ export default function App() {
       <SidePanel />
       <Modals />
       <Lightbox />
+      <FileViewer />
       <Toast />
     </div>
   )

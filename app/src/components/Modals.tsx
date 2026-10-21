@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
-import { Search } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Search, X } from 'lucide-react'
 import { useStore } from '../store'
 import { Avatar, Modal, Toggle, authorName, fmtReset, fmtSize } from './ui'
 import { AccountModal, AccountsModal, ProfileModal } from './Accounts'
 import { EffortSelect, ModelSelect } from './ModelPick'
 import Connections, { LoginBar } from './Connections'
+import Tools from './Tools'
 import { t } from '../i18n'
 
 function CreateBot() {
@@ -134,6 +135,7 @@ function SettingsModal() {
       <LoginBar />
       <button className="btn" onClick={() => setModal('account')}>{t('Мой аккаунт, юзернейм и номер')}</button>
       <button className="btn" onClick={() => setModal('connections')}>{t('Подключения: вход в Claude и свои эндпоинты')}</button>
+      <button className="btn" onClick={() => setModal('tools')}>{t('Инструменты и навыки: MCP, импорт из других агентов')}</button>
       <button className="btn danger" onClick={stopAll}>{t('Остановить всех ботов')}</button>
       <LangRow />
       <h3>{t('Квота Claude')}</h3>
@@ -202,6 +204,7 @@ export default function Modals() {
   if (modal === 'accounts') return <AccountsModal />
   if (modal === 'account') return <AccountModal />
   if (modal === 'connections') return <Connections />
+  if (modal === 'tools') return <Tools />
   return null
 }
 
@@ -214,6 +217,33 @@ export function Lightbox() {
       <div className="lb" onMouseDown={(e) => e.stopPropagation()}>
         {img ? <img src={lightbox.url} alt={lightbox.name} /> : <div className="lb-file">{lightbox.name}</div>}
         <div className="lb-bar"><b>{lightbox.name}</b><span>{fmtSize(lightbox.size)}</span><a className="btn" href={lightbox.url} download={lightbox.name}>{t('Скачать')}</a></div>
+      </div>
+    </div>
+  )
+}
+
+// Просмотр файла из сообщения: текст с номерами строк, нужная строка подсвечена и показана
+export function FileViewer() {
+  const { fileView, closeFile, say } = useStore()
+  const target = useRef<HTMLDivElement>(null)
+  useEffect(() => { target.current?.scrollIntoView({ block: 'center' }) }, [fileView])
+  if (!fileView) return null
+  const lines = fileView.text.split('\n')
+  return (
+    <div className="overlay" onMouseDown={closeFile}>
+      <div className="modal wide fv" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <div className="fv-title"><h2>{fileView.name}</h2><div className="sub rs-path">{fileView.path}{fileView.truncated ? ' · ' + t('показано начало файла') : ''}</div></div>
+          <button className="btn small" onClick={() => { navigator.clipboard?.writeText(fileView.path); say(t('Скопировано')) }}>{t('Копировать путь')}</button>
+          <button className="icon-btn" onClick={closeFile}><X size={18} /></button>
+        </div>
+        <div className="fv-body">
+          {lines.map((l, i) => (
+            <div key={i} className={'fv-line' + (i + 1 === fileView.line ? ' hit' : '')} ref={i + 1 === fileView.line ? target : undefined}>
+              <span className="fv-n">{i + 1}</span><span className="fv-t">{l || ' '}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

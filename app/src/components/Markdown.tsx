@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 // Небольшой безопасный Markdown для чата: без HTML, без зависимостей. Упоминания и метки приоритета отдаёт вызывающий.
 type Mention = (token: string, key: string) => ReactNode | null
 
-const INLINE = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(~~[^~\n]+~~)|(\*[^*\s][^*\n]*\*)|(\[[^\]\n]+\]\(https?:\/\/[^)\s]+\))|((?:\[(?:high|low)\]\s*)?@\w+)|(\/all\b)|(https?:\/\/[^\s<)]+)/g
+const INLINE = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(~~[^~\n]+~~)|(\*[^*\s][^*\n]*\*)|(\[[^\]\n]+\]\(https?:\/\/[^)\s]+\))|((?:\[(?:high|low)\]\s*)?@\w+)|((?<![\w/`])\/[a-z][a-z0-9_-]*(?![\w/-]))|(https?:\/\/[^\s<)]+)/g
 
 function inline(text: string, mention: Mention, key: string): ReactNode[] {
   const out: ReactNode[] = []
@@ -14,7 +14,8 @@ function inline(text: string, mention: Mention, key: string): ReactNode[] {
     if (i > last) out.push(text.slice(last, i))
     const t = m[0]
     const k = `${key}-${n++}`
-    if (m[1]) out.push(<code key={k} className="inline">{t.slice(1, -1)}</code>)
+    // код в обратных кавычках: вызывающий может превратить его в ссылку на файл (токен приходит вместе с кавычками)
+    if (m[1]) out.push(mention(t, k) ?? <code key={k} className="inline">{t.slice(1, -1)}</code>)
     else if (m[2]) out.push(<strong key={k}>{inline(t.slice(2, -2), mention, k)}</strong>)
     else if (m[3]) out.push(<s key={k}>{t.slice(2, -2)}</s>)
     else if (m[4]) out.push(<em key={k}>{inline(t.slice(1, -1), mention, k)}</em>)

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { SendHorizonal, Paperclip, X, FileText } from 'lucide-react'
+import { SendHorizonal, Paperclip, X, FileText, Sparkles } from 'lucide-react'
 import { useStore } from '../store'
 import type { Attachment } from '../types'
 import { Avatar, fmtSize } from './ui'
@@ -7,7 +7,7 @@ import { call } from '../live'
 import { t } from '../i18n'
 
 export default function Composer({ channelId, threadOf, placeholder }: { channelId: string; threadOf?: string; placeholder?: string }) {
-  const { send, bots, channels, accounts, unblock } = useStore()
+  const { send, bots, channels, accounts, unblock, tools } = useStore()
   const [text, setText] = useState('')
   const [sel, setSel] = useState(0)
   const [files, setFiles] = useState<(Attachment & { uploading?: boolean })[]>([])
@@ -19,10 +19,16 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
   const blocked = !!peer && accounts.me.blocked.includes(peer)
 
   const m = text.match(/@(\w*)$/)
-  const sl = text.match(/(^|\s)\/(\w*)$/)
-  const options = m
+  const sl = text.match(/(^|\s)\/([\w-]*)$/)
+  type Opt = { id: string; name: string; desc?: string; skill?: boolean }
+  const options: Opt[] = m
     ? [{ id: 'all', name: 'all' }, ...bots.filter((b) => ch?.members.includes(b.id))].filter((b) => b.name.startsWith(m[1]))
-    : sl && ch?.kind === 'channel' && 'all'.startsWith(sl[2]) ? [{ id: '/all', name: '/all' }] : []
+    : sl
+      ? [
+          ...(ch?.kind === 'channel' && 'all'.startsWith(sl[2]) ? [{ id: '/all', name: '/all' }] : []),
+          ...tools.skills.filter((s) => s.name.startsWith(sl[2].toLowerCase())).slice(0, 8).map((s) => ({ id: 'skill:' + s.name, name: '/' + s.name, desc: s.description, skill: true })),
+        ]
+      : []
 
   const addFiles = (list: FileList | File[]) => {
     for (const f of [...list]) {
@@ -44,7 +50,7 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
     }
   }
   const pick = (name: string) => {
-    setText(name === '/all' ? text.replace(/\/(\w*)$/, '/all ') : text.replace(/@(\w*)$/, `@${name} `))
+    setText(name.startsWith('/') ? text.replace(/\/([\w-]*)$/, name + ' ') : text.replace(/@(\w*)$/, `@${name} `))
     setSel(0)
     ref.current?.focus()
   }
@@ -87,7 +93,7 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
           <div className="mention-list">
             {options.map((o, i) => (
               <button key={o.id} className={i === sel ? 'sel' : ''} onMouseDown={(e) => { e.preventDefault(); pick(o.name) }}>
-                <Avatar id={o.id} size={22} /> {o.name.startsWith("/") ? o.name + ' · ' + t('важное для всех') : "@" + o.name}
+                {o.skill ? <span className="opt-ico"><Sparkles size={15} /></span> : <Avatar id={o.id} size={22} />} {o.skill ? o.name + ' · ' + (o.desc ?? '').slice(0, 70) : o.name === '/all' ? o.name + ' · ' + t('важное для всех') : '@' + o.name}
               </button>
             ))}
           </div>
