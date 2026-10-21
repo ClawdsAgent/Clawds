@@ -1329,3 +1329,8 @@ export const getState = () => S
 
 // Команды, доступные без открытой сессии
 export const GLOBAL_COMMANDS = new Set(['generateSkill', 'saveMcp', 'deleteMcp', 'testMcp', 'scanMcp', 'importMcp', 'getSkill', 'saveSkill', 'deleteSkill', 'scanSkills', 'importSkills', 'scanChats', 'previewChats', 'setLang', 'claudeLogin', 'claudeStatus', 'saveProvider', 'refreshModels', 'deleteProvider', 'setModelLite', 'addModel', 'removeModel', 'generatePrompt', 'listRecent', 'inspectFolder', 'createSession', 'openSession', 'forgetSession'])
+
+// Test hooks for automated routing-rule tests (issue #10).
+// Exposes the pure routing helpers so node:test can verify
+// notification tiers and loop protection without a running server.
+export const __routingTest__ = { isAll, parseMentions, tier1Allowed, handoffAllowed, tier1Log, handoffLog }
