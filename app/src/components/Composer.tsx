@@ -33,15 +33,19 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
   const addFiles = (list: FileList | File[]) => {
     for (const f of [...list]) {
       const id = Math.random().toString(36).slice(2)
-      const local = { id, name: f.name || t('вставленное.png'), size: f.size, mime: f.type || 'application/octet-stream', url: URL.createObjectURL(f), uploading: true }
+      const url = URL.createObjectURL(f)
+      const local = { id, name: f.name || t('вставленное.png'), size: f.size, mime: f.type || 'application/octet-stream', url, uploading: true }
       setFiles((cur) => [...cur, local])
       const reader = new FileReader()
       reader.onload = async () => {
         try {
           const data = String(reader.result).split(',')[1] ?? ''
           const up = await call<Attachment>('upload', { name: local.name, mime: local.mime, data })
-          setFiles((cur) => cur.map((x) => (x.id === id ? { ...up, id, url: local.url, uploading: false, serverUrl: up.url } as any : x)))
+          // Сервер вернул свой URL — blob для предпросмотра больше не нужен, освобождаем память
+          URL.revokeObjectURL(url)
+          setFiles((cur) => cur.map((x) => (x.id === id ? { ...up, id, url: up.url, uploading: false } : x)))
         } catch (e) {
+          URL.revokeObjectURL(url)
           setFiles((cur) => cur.filter((x) => x.id !== id))
           useStore.getState().say((e as Error).message)
         }
@@ -54,9 +58,13 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
     setSel(0)
     ref.current?.focus()
   }
+  const removeFile = (f: (Attachment & { uploading?: boolean })) => {
+    URL.revokeObjectURL(f.url) // безвредно для обычных URL, освобождает blob:
+    setFiles((cur) => cur.filter((x) => x.id !== f.id))
+  }
   const submit = () => {
     if ((!text.trim() && !files.length) || files.some((f) => f.uploading)) return
-    send(channelId, text, threadOf, files.length ? files.map(({ uploading, serverUrl, ...a }: any) => ({ ...a, url: serverUrl ?? a.url })) : undefined)
+    send(channelId, text, threadOf, files.length ? files.map(({ uploading, ...a }) => a) : undefined)
     setText(''); setFiles([])
   }
 
@@ -83,7 +91,7 @@ export default function Composer({ channelId, threadOf, placeholder }: { channel
             <div className="prev" key={f.id}>
               {f.mime.startsWith('image/') ? <img src={f.url} alt="" /> : <div className="prev-file"><FileText size={22} /><span>{f.name}</span><em>{fmtSize(f.size)}</em></div>}
               {f.uploading && <div className="up-spin"><span className="spin">◌</span></div>}
-              <button className="prev-x" onClick={() => setFiles(files.filter((x) => x.id !== f.id))}><X size={12} /></button>
+              <button className="prev-x" onClick={() => removeFile(f)}><X size={12} /></button>
             </div>
           ))}
         </div>
