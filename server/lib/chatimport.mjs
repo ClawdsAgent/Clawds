@@ -5,7 +5,9 @@ import { tr } from './locale.mjs'
 const MAX_TEXT = 20_000
 const MAX_MSGS = 2000
 const clip = (s) => String(s ?? '').trim().slice(0, MAX_TEXT)
-const ms = (v) => { if (!v) return 0; if (typeof v === 'number') return v < 1e12 ? Math.round(v * 1000) : v; const t = Date.parse(v); return Number.isNaN(t) ? 0 : t }
+// Числовая метка: секунды (< 1e10, т.е. раньше 2286 года) умножаем на 1000,
+// миллисекунды оставляем как есть. Порог 1e12 ломал мс-метки до сентября 2001-го.
+const ms = (v) => { if (!v) return 0; if (typeof v === 'number') return v < 1e10 ? Math.round(v * 1000) : v; const t = Date.parse(v); return Number.isNaN(t) ? 0 : t }
 
 function blocksText(c) {
   if (typeof c === 'string') return c
