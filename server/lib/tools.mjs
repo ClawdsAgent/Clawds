@@ -36,16 +36,23 @@ export function normalizeServer(raw) {
 function parseCodexToml(text) {
   const out = {}
   let cur = null
+  const unesc = (s) => s.replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+  const strVal = (v) => {
+    const dq = /^"((?:[^"\\]|\\.)*)"/.exec(v)
+    if (dq) return unesc(dq[1])
+    const sq = /^'([^']*)'/.exec(v) // литеральная строка: кавычки снимаем, экранирования нет
+    if (sq) return sq[1]
+    return v
+  }
   const val = (v) => {
     v = v.trim()
-    if (v.startsWith('[')) return [...v.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'))
-    if (v.startsWith('{')) return Object.fromEntries([...v.matchAll(/([A-Za-z0-9_]+)\s*=\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => [m[1], m[2]]))
-    const m = /^"((?:[^"\\]|\\.)*)"/.exec(v)
-    return m ? m[1].replace(/\\\\/g, '\\') : v
+    if (v.startsWith('[')) return [...v.matchAll(/"((?:[^"\\]|\\.)*)"|'([^']*)'/g)].map((m) => (m[1] !== undefined ? unesc(m[1]) : m[2]))
+    if (v.startsWith('{')) return Object.fromEntries([...v.matchAll(/([A-Za-z0-9_]+)\s*=\s*("(?:[^"\\]|\\.)*"|'[^']*'|[^,}]+)/g)].map((m) => [m[1], strVal(m[2].trim())]))
+    return strVal(v)
   }
   for (const line of text.split(/\r?\n/)) {
-    const h = /^\s*\[mcp_servers\.([^\].]+)(?:\.(env))?\]\s*$/.exec(line)
-    if (h) { out[h[1]] ??= {}; cur = h[2] ? (out[h[1]].env ??= {}) : out[h[1]]; continue }
+    const h = /^\s*\[mcp_servers\.((?:"[^"]+"|'[^']+'|[^\].\s]+?))(?:\.(env))?\]\s*$/.exec(line)
+    if (h) { const name = h[1].replace(/^["']|["']$/g, ''); out[name] ??= {}; cur = h[2] ? (out[name].env ??= {}) : out[name]; continue }
     if (/^\s*\[/.test(line)) { cur = null; continue }
     const kv = /^\s*([A-Za-z0-9_]+)\s*=\s*(.+?)\s*$/.exec(line)
     if (cur && kv) cur[kv[1]] = val(kv[2])
